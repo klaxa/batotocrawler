@@ -39,7 +39,7 @@ class Batoto(object):
 
 		image_list = []
 		for page_url in pages:
-			page = BeautifulSoup(self.open_url(chapter_url))
+			page = BeautifulSoup(self.open_url(page_url))
 
 			image_url = page.find("div", {"id": "full_image"}).find("img")["src"]
 			image_list.append(image_url)
