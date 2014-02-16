@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
-import io
 import gzip
 import re
+import StringIO
 import urllib2
 
 class Batoto(object):
@@ -9,13 +9,7 @@ class Batoto(object):
 		if url == None:
 			self.page = None
 		else:
-			opener = urllib2.build_opener()
-			opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36'), ("Accept-Encoding" "compress, gzip")]
-			response = opener.open(url).read()
-			data = gzip.GzipFile(fileobj=io.BytesIO(response), mode="rb")
-
-			self.page = BeautifulSoup(data)
-			print self.page.prettify()
+			self.page = BeautifulSoup(self.open_url(url))
 
 	# Returns a dictionary containing chapter number, chapter name and chapter URL.
 	def chapter_info(self, chapter_data):
@@ -30,11 +24,7 @@ class Batoto(object):
 
 	# Returns a list of chapter image URLs.
 	def chapter_pages(self, chapter_url):
-		opener = urllib2.build_opener()
-		opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36')]
-		response = opener.open(chapter_url).read()
-		data = gzip.GzipFile(fileobj=io.BytesIO(response), mode="rb")
-		chapter = BeautifulSoup(data)
+		chapter = BeautifulSoup(self.open_url(chapter_url))
 
 		page_urls = chapter.find("select", {"name": "page_select"}).find_all("option")
 
@@ -49,15 +39,22 @@ class Batoto(object):
 
 		image_list = []
 		for page_url in pages:
-			opener = urllib2.build_opener()
-			opener.addheaders = [('User-agent', 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36')]
-			response = opener.open(page_url).read()
-			data = gzip.GzipFile(fileobj=io.BytesIO(response), mode="rb")
-			page = BeautifulSoup(data)
+			page = BeautifulSoup(self.open_url(chapter_url))
 
 			image_url = page.find("div", {"id": "full_image"}).find("img")["src"]
 			image_list.append(image_url)
 		return image_list
+
+	# Function designed to create a request object with correct headers and decompress it if needed.
+	def open_url(self, url):
+		req = urllib2.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
+		response = urllib2.urlopen(req)
+		if response.info().get('Content-Encoding') == 'gzip':
+			buf = StringIO.StringIO(response.read())
+			data = gzip.GzipFile(fileobj=buf, mode="rb")
+			return data
+		else:
+			return reponse.read()
 
 	def series_chapters(self):
 		chapter_row = self.page.find_all("tr", {"class": "row lang_English chapter_row"})
