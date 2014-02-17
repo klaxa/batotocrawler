@@ -31,15 +31,11 @@ def zip_files(filelist, filename):
 	filename = os.getcwd() + "/" + filename + ".zip"
 	zipf = zipfile.ZipFile(filename, mode="w")
 	for f in filelist:
-		zipf.write(f)
+		zipf.write(f, os.path.basename(f))
 		os.remove(f)
 	print("Zip created: " + filename)
 
 optlist, args = getopt.getopt(sys.argv[1:], 's:e:')
-'''try:
-	
-except getopt.GetoptError:
-	print("Invalid parameters.")'''
 
 # If there are options provided, declare the applicable variables with values.
 if len(optlist) > 0:
