@@ -35,6 +35,7 @@ def zip_files(filelist, filename):
 		os.remove(f)
 	print("Zip created: " + filename)
 
+# Split the given arguments into options and arguments.
 optlist, args = getopt.getopt(sys.argv[1:], 's:e:')
 
 # If there are options provided, declare the applicable variables with values.
@@ -54,30 +55,48 @@ elif len(args) > 1:
 else:
 	url = sys.argv.pop()
 
-manga = Batoto(url)
-chapters = manga.series_chapters()
+# Check if the input is an individual chapter or the entire series.
+if re.match(r'.*batoto\.net/comic/.*', url):
+	manga = Batoto(url)
+	chapters = manga.series_chapters()
+elif re.match(r'.*batoto\.net/read/.*', url):
+	manga = Batoto(None)
+	series_url = manga.chapter_series(url)
+	manga = Batoto(series_url)
 
-'''If there is a start variable declared, look for it by comparing it chapter["chapter"] strings.
-If the string isn't found or no start variable is declared, iteration is started from 0.'''
-if 'chapters_start' in locals():
+	chapters = []
+	for chapter in manga.series_chapters():
+		if chapter["url"] == url:
+			chapters.append(chapter)
+else:
+	print("Input not recognized.")
+	exit()
+
+'''If there is a end variable declared and more than one chapter,
+look for it by comparing it chapter["chapter"] strings. If the string
+isn't found or no start variable is declared, iteration is started from 0.'''
+if 'chapters_start' in locals() and len(chapters) > 1:
 	start_num = -1
 	for num, chapter in enumerate(chapters): 
 		if chapters_start == chapter["chapter"]:
 			print("Starting download at chapter " + chapter["chapter"])
 			start_num = num
+			break
 	if start_num == -1:
 		print("Defined starting chapter not found. Starting from chapter " + chapters[-1]["chapter"] + ".")
 else:
 	start_num = -1
 
-'''If there is a end variable declared, look for it by comparing it chapter["chapter"] strings.
-If the string isn't found or no end variable is declared, iteration is done to list end.'''
-if 'chapters_end' in locals():
+'''If there is a end variable declared and more than one chapter,
+look for it by comparing it chapter["chapter"] strings. If the string
+isn't found or no end variable is declared, iteration is done to list end.'''
+if 'chapters_end' in locals() and len(chapters) > 1:
 	end_num = None
 	for num, chapter in enumerate(chapters): 
 		if chapters_end == chapter["chapter"]:
 			print("Ending download at chapter " + chapter["chapter"])
 			end_num = num - 1
+			break
 	if end_num == None:
 		print("Defined end chapter not found. Ending at chapter " + chapters[0]["chapter"] + ".")
 else:

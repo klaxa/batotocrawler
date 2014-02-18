@@ -14,6 +14,12 @@ class Batoto(Crawler):
 		else:
 			self.page = BeautifulSoup(self.open_url(url))
 
+	# Returns the series page for an individual chapter URL. Useful for scraping series metadata for an individual chapter.
+	def chapter_series(self, url):
+		chapter = BeautifulSoup(self.open_url(url))
+		series_url = chapter.select('a[href*="http://www.batoto.net/comic/_/"]')[0].get('href')
+		return series_url
+
 	# Returns a dictionary containing chapter number, chapter name and chapter URL.
 	def chapter_info(self, chapter_data):
 		chapter = BeautifulSoup(str(chapter_data))
