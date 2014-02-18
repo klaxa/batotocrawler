@@ -66,7 +66,7 @@ elif re.match(r'.*batoto\.net/read/.*', url):
 
 	chapters = []
 	for chapter in manga.series_chapters():
-		if chapter["url"] == url:
+		if re.match(url, chapter["url"]):
 			chapters.append(chapter)
 else:
 	print("Input not recognized.")
