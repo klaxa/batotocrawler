@@ -8,6 +8,10 @@ import urllib.request
 import zipfile
 from Batoto import Batoto
 
+def print_info(message):
+	if not 'silent_mode' in globals():
+		print(message)
+
 def download_file(url, filename):
 	file_extension = re.search(r'.*\.(.*)', url).group(1)
 	filename = os.getcwd() + "/" + str(filename) + "." + file_extension
@@ -33,10 +37,10 @@ def zip_files(filelist, filename):
 	for f in filelist:
 		zipf.write(f, os.path.basename(f))
 		os.remove(f)
-	print("Zip created: " + filename)
+	print_info("Zip created: " + filename)
 
 # Split the given arguments into options and arguments.
-optlist, args = getopt.getopt(sys.argv[1:], 's:e:')
+optlist, args = getopt.getopt(sys.argv[1:], 'qs:e:')
 
 # If there are options provided, declare the applicable variables with values.
 if len(optlist) > 0:
@@ -45,12 +49,14 @@ if len(optlist) > 0:
 			chapters_start = arg
 		elif opt == "-e":
 			chapters_end = arg
+		elif opt == "-q":
+			silent_mode = True
 
 # If there are no arguments provided, ask user for input. If there is more than one argument, reject input. Otherwise use the input as the URL.
 if len(args) == 0:
 	url = input('>> ')
 elif len(args) > 1:
-	print("Too many args.")
+	print_info("Too many args.")
 	exit()
 else:
 	url = sys.argv.pop()
@@ -69,7 +75,7 @@ elif re.match(r'.*batoto\.net/read/.*', url):
 		if re.match(url, chapter["url"]):
 			chapters.append(chapter)
 else:
-	print("Input not recognized.")
+	print_info("Input not recognized.")
 	exit()
 
 '''If there is a end variable declared and more than one chapter,
@@ -79,11 +85,11 @@ if 'chapters_start' in locals() and len(chapters) > 1:
 	start_num = -1
 	for num, chapter in enumerate(chapters): 
 		if chapters_start == chapter["chapter"]:
-			print("Starting download at chapter " + chapter["chapter"])
+			print_info("Starting download at chapter " + chapter["chapter"])
 			start_num = num
 			break
 	if start_num == -1:
-		print("Defined starting chapter not found. Starting from chapter " + chapters[-1]["chapter"] + ".")
+		print_info("Defined starting chapter not found. Starting from chapter " + chapters[-1]["chapter"] + ".")
 else:
 	start_num = -1
 
@@ -94,26 +100,26 @@ if 'chapters_end' in locals() and len(chapters) > 1:
 	end_num = None
 	for num, chapter in enumerate(chapters): 
 		if chapters_end == chapter["chapter"]:
-			print("Ending download at chapter " + chapter["chapter"])
+			print_info("Ending download at chapter " + chapter["chapter"])
 			end_num = num - 1
 			break
 	if end_num == None:
-		print("Defined end chapter not found. Ending at chapter " + chapters[0]["chapter"] + ".")
+		print_info("Defined end chapter not found. Ending at chapter " + chapters[0]["chapter"] + ".")
 else:
 	end_num = None
 
 for chapter in chapters[start_num:end_num:-1]:
 	if chapter["name"] != None:
-		print("Chapter " + chapter["chapter"] + " - " + chapter["name"])
+		print_info("Chapter " + chapter["chapter"] + " - " + chapter["name"])
 	else:
-		print("Chapter " + chapter["chapter"])
+		print_info("Chapter " + chapter["chapter"])
 
 	clean_title = clean_filename(manga.series_info("title"))
 	image_list = manga.chapter_images(chapter["url"])
 	file_list = []
 
 	for image_name, image_url in enumerate(image_list, start=1):
-		print("Download: Page " + "{0:04d}".format(image_name))
+		print_info("Download: Page " + "{0:04d}".format(image_name))
 		downloaded_file = download_file(image_url, "{0:04d}".format(image_name))
 		file_list.append(downloaded_file)
 
