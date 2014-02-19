@@ -44,14 +44,22 @@ class Batoto(Crawler):
 
 	# Returns the image URL for the page.
 	def chapter_images(self, chapter_url):
-		pages = self.chapter_pages(chapter_url)
-
 		image_list = []
-		for page_url in pages:
-			page = BeautifulSoup(self.open_url(page_url))
 
-			image_url = page.find("div", {"id": "full_image"}).find("img")["src"]
-			image_list.append(image_url)
+		try:
+			pages = self.chapter_pages(chapter_url)
+
+			for page_url in pages:
+				page = BeautifulSoup(self.open_url(page_url))
+				image_url = page.find("div", {"id": "full_image"}).find("img")["src"]
+				image_list.append(image_url)
+		except AttributeError:
+			page = BeautifulSoup(self.open_url(chapter_url))
+			images = page.find_all('img', src=re.compile("img\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
+			
+			for image in images:
+				image_list.append(image['src'])
+
 		return image_list
 
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
