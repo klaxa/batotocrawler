@@ -25,11 +25,12 @@ class Batoto(Crawler):
 		chapter = BeautifulSoup(str(chapter_data))
 		chapter_url = chapter.a['href']
 		chapter_number = re.search(r'Ch\.(.*?)[:\s].*', chapter.a.text).group(1)
+		chapter_group = chapter.select('a[href*="http://www.batoto.net/group/"]')[0].text
 		try:
 			chapter_name = re.search(r'Ch\..*: *(.*)', chapter.a.text).group(1)
 		except AttributeError:
 			chapter_name = None
-		return {"chapter": chapter_number, "name": chapter_name, "url": chapter_url}
+		return {"chapter": chapter_number, "name": chapter_name, "url": chapter_url, "group": chapter_group}
 
 	# Returns a list of chapter image URLs.
 	def chapter_pages(self, chapter_url):
