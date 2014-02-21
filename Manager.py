@@ -39,8 +39,53 @@ def zip_files(filelist, filename):
 		os.remove(f)
 	print_info("Zip created: " + filename)
 
+def duplicate_chapters(chapters):
+	def no_preference():
+		print_info("Two releases for chapter {}: {} and {}.".format(chapter["chapter"], chapter["group"], chapter2["group"]))
+		print_info("No preference set. Picking {} for chapter {}.".format(chapter["group"], chapter["chapter"]))
+		chapters.remove(chapter2)
+
+	def preference(group):
+		print_info("Two releases for chapter {}: {} and {}.".format(chapter["chapter"], chapter["group"], chapter2["group"]))
+		if chapter["group"] == group:
+			print_info("Preference: {}. Picking {} for chapter {}.".format(group, chapter["group"], chapter["chapter"]))
+			chapters.remove(chapter2)
+		elif chapter2["group"] == group:
+			print_info("Preference: {}. Picking {} for chapter {}.".format(group, chapter2["group"], chapter2["chapter"]))
+			chapters.remove(chapter)
+		else:
+			print_info("Preference: {}. Not found. Picking {} for chapter {}.".format(group, chapter["group"], chapter["chapter"]))
+			chapters.remove(chapter2)
+
+	def interactive():
+		print_info("Two releases for chapter {}: {} and {}.".format(chapter["chapter"], chapter["group"], chapter2["group"]))
+		print("1. {}".format(chapter["group"]))
+		print("2. {}".format(chapter2["group"]))
+		while(True):
+			choice = input('>> ')
+			if choice == '1':
+				print_info("Picking {} for chapter {}.".format(chapter["group"], chapter["chapter"]))
+				chapters.remove(chapter2)
+				break
+			elif choice == '2':
+				print_info("Picking {} for chapter {}.".format(chapter2["group"], chapter2["chapter"]))
+				chapters.remove(chapter)
+				break
+			else:
+				print("Invalid input.")
+
+	for num, chapter in enumerate(chapters):
+			for chapter2 in chapters[num+1:]:
+				if chapter["chapter"] == chapter2["chapter"]:
+					if 'interactive_mode' in globals():
+						interactive()
+					elif 'group_preference' in globals():
+						preference(group_preference)
+					else:
+						no_preference()
+
 # Split the given arguments into options and arguments.
-optlist, args = getopt.getopt(sys.argv[1:], 'qs:e:')
+optlist, args = getopt.getopt(sys.argv[1:], 'qs:e:', ['prefer-group=', 'interactive'])
 
 # If there are options provided, declare the applicable variables with values.
 if len(optlist) > 0:
@@ -51,6 +96,10 @@ if len(optlist) > 0:
 			chapters_end = arg
 		elif opt == "-q":
 			silent_mode = True
+		elif opt == "--interactive":
+			interactive_mode = True
+		elif opt == "--prefer-group":
+			group_preference = arg
 
 # If there are no arguments provided, ask user for input. If there is more than one argument, reject input. Otherwise use the input as the URL.
 if len(args) == 0:
@@ -65,6 +114,7 @@ else:
 if re.match(r'.*batoto\.net/comic/.*', url):
 	manga = Batoto(url)
 	chapters = manga.series_chapters()
+	duplicate_chapters(chapters)
 elif re.match(r'.*batoto\.net/read/.*', url):
 	manga = Batoto(None)
 	series_url = manga.chapter_series(url)
