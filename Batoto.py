@@ -66,6 +66,7 @@ class Batoto(Crawler):
 		except AttributeError:
 			page = BeautifulSoup(self.open_url(chapter_url))
 			images = page.find_all('img', src=re.compile("img[0-9]*\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
+			
 			for image in images:
 				image_list.append(image['src'])
 
@@ -82,7 +83,7 @@ class Batoto(Crawler):
 		else:
 			return reponse.read()
 
-	def series_chapters(self):
+	def series_chapters(self, all_chapters=False):
 		chapter_row = self.page.find_all("tr", {"class": "row lang_English chapter_row"})
 		chapters = []
 		for chapter in chapter_row:
@@ -93,14 +94,16 @@ class Batoto(Crawler):
 			if re.match(r'^[0-9]*[Vv][0-9]*', chapter["chapter"]):
 				chapter["chapter"] = re.search(r'^([0-9]*)[Vv][0-9]*', chapter["chapter"]).group(1)
 
-		# Keep the highest version number of a chapter only if a series has v1s and v2s present at the same time.
-		for num, chapter in enumerate(chapters):
-			for chapter2 in chapters[num+1:]:
-				if chapter["chapter"] == chapter2["chapter"]:
-					if chapter["version"] > chapter2["version"]:
-						chapters.remove(chapter2)
-					elif chapter["version"] < chapter2["version"]:
-						chapters.remove(chapter)
+		'''If the optional parameter all_chapters is not True, keep the highest version
+		number of a chapter only if a series has v1s and v2s present at the same time.'''
+		if all_chapters == False:
+			for num, chapter in enumerate(chapters):
+				for chapter2 in chapters[num+1:]:
+					if chapter["chapter"] == chapter2["chapter"]:
+						if chapter["version"] > chapter2["version"]:
+							chapters.remove(chapter2)
+						elif chapter["version"] < chapter2["version"]:
+							chapters.remove(chapter)
 
 		return chapters
 
