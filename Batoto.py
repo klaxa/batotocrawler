@@ -65,8 +65,7 @@ class Batoto(Crawler):
 				image_list.append(image_url)
 		except AttributeError:
 			page = BeautifulSoup(self.open_url(chapter_url))
-			images = page.find_all('img', src=re.compile("img\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
-			
+			images = page.find_all('img', src=re.compile("img[0-9]*\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
 			for image in images:
 				image_list.append(image['src'])
 
@@ -102,7 +101,7 @@ class Batoto(Crawler):
 						chapters.remove(chapter2)
 					elif chapter["version"] < chapter2["version"]:
 						chapters.remove(chapter)
-						
+
 		return chapters
 
 	def series_info(self, search):
