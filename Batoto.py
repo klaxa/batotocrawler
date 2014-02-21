@@ -26,11 +26,20 @@ class Batoto(Crawler):
 		chapter_url = chapter.a['href']
 		chapter_number = re.search(r'Ch\.(.*?)[:\s].*', chapter.a.text).group(1)
 		chapter_group = chapter.select('a[href*="http://www.batoto.net/group/"]')[0].text
+		
+		try:
+			chapter_version = re.search(r'v([0-9]*)', chapter.a.text).group(1)
+		except AttributeError:
+			chapter_version = '1'
+		if chapter_version == '':
+			chapter_version = '1'
+
 		try:
 			chapter_name = re.search(r'Ch\..*: *(.*)', chapter.a.text).group(1)
 		except AttributeError:
 			chapter_name = None
-		return {"chapter": chapter_number, "name": chapter_name, "url": chapter_url, "group": chapter_group}
+
+		return {"chapter": chapter_number, "name": chapter_name, "url": chapter_url, "group": chapter_group, "version": int(chapter_version)}
 
 	# Returns a list of chapter image URLs.
 	def chapter_pages(self, chapter_url):
@@ -79,6 +88,21 @@ class Batoto(Crawler):
 		chapters = []
 		for chapter in chapter_row:
 			chapters.append(self.chapter_info(chapter))
+
+		# Remove the v2 part from chapters that have it after the number (34v2) so zip files will be named correctly later.
+		for chapter in chapters:
+			if re.match(r'^[0-9]*[Vv][0-9]*', chapter["chapter"]):
+				chapter["chapter"] = re.search(r'^([0-9]*)[Vv][0-9]*', chapter["chapter"]).group(1)
+
+		# Keep the highest version number of a chapter only if a series has v1s and v2s present at the same time.
+		for num, chapter in enumerate(chapters):
+			for chapter2 in chapters[num+1:]:
+				if chapter["chapter"] == chapter2["chapter"]:
+					if chapter["version"] > chapter2["version"]:
+						chapters.remove(chapter2)
+					elif chapter["version"] < chapter2["version"]:
+						chapters.remove(chapter)
+						
 		return chapters
 
 	def series_info(self, search):
