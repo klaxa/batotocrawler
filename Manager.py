@@ -6,7 +6,6 @@ import re
 import sys
 import urllib.request
 import zipfile
-from Batoto import Batoto
 
 def print_info(message, newline=True):
 	if not 'silent_mode' in globals():
@@ -131,23 +130,17 @@ elif len(args) > 1:
 else:
 	url = sys.argv.pop()
 
-# Check if the input is an individual chapter or the entire series.
-if re.match(r'.*batoto\.net/comic/.*', url):
+# Intializes the manga object if the URL is valid and has a scraper.
+if re.match(r'.*batoto\.net/.*', url):
+	from Batoto import Batoto
 	manga = Batoto(url)
-	chapters = manga.series_chapters()
-	duplicate_chapters(chapters)
-elif re.match(r'.*batoto\.net/read/.*', url):
-	manga = Batoto(None)
-	series_url = manga.chapter_series(url)
-	manga = Batoto(series_url)
-
-	chapters = []
-	for chapter in manga.series_chapters():
-		if re.match(url, chapter["url"]):
-			chapters.append(chapter)
 else:
-	print_info("Input not recognized.")
+	print_info("Invalid input.")
 	exit()
+
+chapters = manga.series_chapters()
+if len(chapters) > 1:
+	duplicate_chapters(chapters)
 
 '''If there is a end variable declared and more than one chapter,
 look for it by comparing it chapter["chapter"] strings. If the string

@@ -9,10 +9,16 @@ from Crawler import Crawler
 
 class Batoto(Crawler):
 	def __init__(self, url):
-		if url == None:
-			self.page = None
-		else:
+		self.url = url
+		if re.match(r'.*batoto\.net/comic/.*', url):
 			self.page = BeautifulSoup(self.open_url(url))
+			self.init_with_chapter = False
+		elif re.match(r'.*batoto\.net/read/.*', url):
+			self.page = BeautifulSoup(self.open_url(self.chapter_series(url)))
+			self.init_with_chapter = True
+		else:
+			self.page = None
+			self.init_with_chapter = False
 
 	# Returns the series page for an individual chapter URL. Useful for scraping series metadata for an individual chapter.
 	def chapter_series(self, url):
@@ -83,11 +89,17 @@ class Batoto(Crawler):
 		else:
 			return reponse.read()
 
-	def series_chapters(self, all_chapters=False):
+	def series_chapters(self, all_chapters=False, all_versions=False):
 		chapter_row = self.page.find_all("tr", {"class": "row lang_English chapter_row"})
 		chapters = []
 		for chapter in chapter_row:
 			chapters.append(self.chapter_info(chapter))
+
+		# If the object was initialized with a chapter, only return the chapters.
+		if self.init_with_chapter == True and all_chapters == False:
+			for chapter in chapters:
+				if re.match(self.url, chapter["url"]):
+					return [chapter]
 
 		# Remove the v2 part from chapters that have it after the number (34v2) so zip files will be named correctly later.
 		for chapter in chapters:
@@ -96,7 +108,7 @@ class Batoto(Crawler):
 
 		'''If the optional parameter all_chapters is not True, keep the highest version
 		number of a chapter only if a series has v1s and v2s present at the same time.'''
-		if all_chapters == False:
+		if all_versions == False:
 			for num, chapter in enumerate(chapters):
 				for chapter2 in chapters[num+1:]:
 					if chapter["chapter"] == chapter2["chapter"]:
