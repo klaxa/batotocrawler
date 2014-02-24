@@ -95,16 +95,16 @@ class Batoto(Crawler):
 		for chapter in chapter_row:
 			chapters.append(self.chapter_info(chapter))
 
+		# Remove the v2 part from chapters that have it after the number (34v2) so zip files will be named correctly later.
+		for chapter in chapters:
+			if re.match(r'^[0-9]*[Vv][0-9]*', chapter["chapter"]):
+				chapter["chapter"] = re.search(r'^([0-9]*)[Vv][0-9]*', chapter["chapter"]).group(1)
+
 		# If the object was initialized with a chapter, only return the chapters.
 		if self.init_with_chapter == True and all_chapters == False:
 			for chapter in chapters:
 				if re.match(self.url, chapter["url"]):
 					return [chapter]
-
-		# Remove the v2 part from chapters that have it after the number (34v2) so zip files will be named correctly later.
-		for chapter in chapters:
-			if re.match(r'^[0-9]*[Vv][0-9]*', chapter["chapter"]):
-				chapter["chapter"] = re.search(r'^([0-9]*)[Vv][0-9]*', chapter["chapter"]).group(1)
 
 		'''If the optional parameter all_chapters is not True, keep the highest version
 		number of a chapter only if a series has v1s and v2s present at the same time.'''
