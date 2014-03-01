@@ -81,7 +81,16 @@ class Batoto(Crawler):
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
 	def open_url(self, url):
 		req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
-		response = urllib.request.urlopen(req)
+		
+		'''Loop to fetch the URL a maximum of 3 times. If X-Cache header value is 'HIT', loop is broken.
+		If final attempt does not return 'HIT', error message with URL is printed to user.'''
+		for i in range(3):
+			response = urllib.request.urlopen(req)
+			if response.info().get('X-Cache') == 'HIT':
+				break
+			if i == 2:
+				print("ERROR: Unable to open " + response.geturl() + ".")
+
 		if response.info().get('Content-Encoding') == 'gzip':
 			buf = io.BytesIO(response.read())
 			data = gzip.GzipFile(fileobj=buf, mode="rb")
