@@ -193,6 +193,6 @@ for chapter in chapters[start_num:end_num:-1]:
 	if re.match(r'[0-9]*\.[0-9]*', chapter["chapter"]):
 		zip_files(file_list, clean_title + "_c" + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(1).zfill(4) + "." + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(2))
 	elif re.match(r'^[0-9]', chapter["chapter"]):
-		zip_files(file_list, clean_title + "_c" + chapter["chapter"].zfill(4))
+		zip_files(file_list, clean_title + "_c" + chapter["chapter"].zfill(4) + ".0")
 	else:
 		zip_files(file_list, clean_title + "_" + chapter["chapter"])
