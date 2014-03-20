@@ -39,7 +39,7 @@ def zip_files(filelist, filename):
 	for f in filelist:
 		zipf.write(f, os.path.basename(f))
 		os.remove(f)
-	print_info("Zip created: " + filename)
+	print_info("Zip created: " + filename.replace(os.environ['HOME'], "~"))
 
 def duplicate_chapters(chapters):
 	numbers = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
