@@ -45,7 +45,12 @@ def duplicate_chapters(chapters):
 	numbers = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
 
 	def print_initial():
-		print_info("{} releases for chapter {}: ".format(numbers[len(duplicates)], duplicates[0]["chapter"]), newline=False)
+		if len(duplicates) > 9:
+			number_of_releases = len(duplicates)
+		else:
+			number_of_releases = numbers[len(duplicates)]
+
+		print_info("{} releases for chapter {}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
 		for item in duplicates[:-1]:
 			print_info("{}, ".format(item["group"]), newline=False)
 		print_info("{}.".format(duplicates[-1]["group"]))
@@ -147,7 +152,7 @@ look for it by comparing it chapter["chapter"] strings. If the string
 isn't found or no start variable is declared, iteration is started from 0.'''
 if 'chapters_start' in locals() and len(chapters) > 1:
 	start_num = -1
-	for num, chapter in enumerate(chapters): 
+	for num, chapter in enumerate(chapters):
 		if chapters_start == chapter["chapter"]:
 			print_info("Starting download at chapter " + chapter["chapter"])
 			start_num = num
@@ -162,7 +167,7 @@ look for it by comparing it chapter["chapter"] strings. If the string
 isn't found or no end variable is declared, iteration is done to list end.'''
 if 'chapters_end' in locals() and len(chapters) > 1:
 	end_num = None
-	for num, chapter in enumerate(chapters): 
+	for num, chapter in enumerate(chapters):
 		if chapters_end == chapter["chapter"]:
 			print_info("Ending download at chapter " + chapter["chapter"])
 			end_num = num - 1
