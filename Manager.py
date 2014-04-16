@@ -133,7 +133,7 @@ if len(optlist) > 0:
 			chapters_start = arg
 		elif opt == "-e":
 			chapters_end = arg
-		elif opt == "-q":
+		elif opt == "-q" or "--quiet":
 			silent_mode = True
 		elif opt == "--interactive":
 			interactive_mode = True
