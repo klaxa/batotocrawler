@@ -2,6 +2,7 @@
 
 import getopt
 import os
+import os.path
 import re
 import sys
 import urllib.request
@@ -109,8 +110,21 @@ def duplicate_chapters(chapters):
 			else:
 				no_preference()
 
-# Split the given arguments into options and arguments.
-optlist, args = getopt.getopt(sys.argv[1:], 'qs:e:', ['prefer-group=', 'interactive'])
+def read_config():
+	config_file = os.environ['HOME'] + '/.config/batotocrawler.conf'
+	config_data = []
+
+	# Open the config file for reading, go through it line by line and if line doesn't start with #, add it as a arg.
+	with open(config_file, 'r') as f:
+		for line in f:
+			if line[0] != '#':
+				config_data += line.split()
+
+	return config_data
+
+# Combine the config file and command-line arguments and split them into options and arguments.
+arguments = read_config() + sys.argv[1:]
+optlist, args = getopt.getopt(arguments, 'qs:e:', ['prefer-group=', 'interactive', 'quiet'])
 
 # If there are options provided, declare the applicable variables with values.
 if len(optlist) > 0:

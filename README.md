@@ -16,3 +16,5 @@ Cralws batoto for mangas.
     --prefer-group GROUP_NAME        will keep the chapter by GROUP_NAME in
                                      case of duplicate releases for a single
                                      chapter
+
+These options can also be added in a configuration file in `~/.config/batotocrawler.conf` to be always executed.
