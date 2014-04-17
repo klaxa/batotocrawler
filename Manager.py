@@ -115,10 +115,11 @@ def read_config():
 	config_data = []
 
 	# Open the config file for reading, go through it line by line and if line doesn't start with #, add it as a arg.
-	with open(config_file, 'r') as f:
-		for line in f:
-			if line[0] != '#':
-				config_data += line.split()
+	if os.path.isfile(config_file):
+		with open(config_file, 'r') as f:
+			for line in f:
+				if line[0] != '#':
+					config_data += line.split()
 
 	return config_data
 
