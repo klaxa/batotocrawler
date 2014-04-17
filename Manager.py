@@ -35,7 +35,12 @@ def clean_filename(filename):
 	return filename
 
 def zip_files(filelist, filename):
-	filename = os.getcwd() + "/" + filename + ".zip"
+	if 'cbz_mode' in globals():
+		file_extension = ".cbz"
+	else:
+		file_extension = ".zip"
+
+	filename = os.getcwd() + "/" + filename + file_extension
 	zipf = zipfile.ZipFile(filename, mode="w")
 	for f in filelist:
 		zipf.write(f, os.path.basename(f))
@@ -125,7 +130,7 @@ def read_config():
 
 # Combine the config file and command-line arguments and split them into options and arguments.
 arguments = read_config() + sys.argv[1:]
-optlist, args = getopt.getopt(arguments, 'qs:e:', ['prefer-group=', 'interactive', 'quiet'])
+optlist, args = getopt.getopt(arguments, 'qs:e:', ['prefer-group=', 'interactive', 'quiet', 'cbz'])
 
 # If there are options provided, declare the applicable variables with values.
 if len(optlist) > 0:
@@ -134,12 +139,16 @@ if len(optlist) > 0:
 			chapters_start = arg
 		elif opt == "-e":
 			chapters_end = arg
-		elif opt == "-q" or "--quiet":
+		elif opt == "-q":
+			silent_mode = True
+		elif opt == "--quiet":
 			silent_mode = True
 		elif opt == "--interactive":
 			interactive_mode = True
 		elif opt == "--prefer-group":
 			group_preference = arg
+		elif opt == "--cbz":
+			cbz_mode = True
 
 # If there are no arguments provided, ask user for input. If there is more than one argument, reject input. Otherwise use the input as the URL.
 if len(args) == 0:
