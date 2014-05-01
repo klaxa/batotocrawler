@@ -4,7 +4,7 @@ batotocrawler
 Cralws batoto for mangas.
 
 # REQUIREMENTS
-- Python 3
+- Python 3.2.3 (untested on older versions)
 - [BeautifulSoup4](http://www.crummy.com/software/BeautifulSoup/)
 
 # USAGE
