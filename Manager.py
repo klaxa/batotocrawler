@@ -56,20 +56,20 @@ def duplicate_chapters(chapters):
 		else:
 			number_of_releases = numbers[len(duplicates)]
 
-		print_info("{} releases for chapter {}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
-		try:
-			for item in duplicates[:-1]:
+		if manga.uses_groups == True:
+			print_info("{} releases for chapter {}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
+			for item in duplicates[:-1]:		
 				print_info("{}, ".format(item["group"]), newline=False)
 			print_info("{}.".format(duplicates[-1]["group"]))
-		except KeyError:
-			print()
+		else:
+			print_info("{} releases for chapter {}".format(number_of_releases, duplicates[0]["chapter"]))
 
 	def no_preference():
 		print_initial()
 
-		try:
+		if manga.uses_groups == True:
 			print_info("No preference set. Picking {} for chapter {}.".format(duplicates[0]["group"], chapter["chapter"]))
-		except KeyError:
+		else:
 			print_info("No preference set. Picking latter chapter.")
 
 		for item in duplicates[1:]:
@@ -92,14 +92,21 @@ def duplicate_chapters(chapters):
 
 	def interactive():
 		print_initial()
+
 		for num, item in enumerate(duplicates, start=1):
-			print("{}. {}".format(num, item["group"]))
+			if manga.uses_groups == True:
+				print("{}. {}".format(num, item["group"]))
+			else:
+				print("{}. Release {}".format(num, num))
 
 		# Try to delete the given item from the duplicates list. Loops until a valid item is entered.
 		while(True):
 			choice = input('>> ')
 			try:
-				print_info("Picking {} for chapter {}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
+				if manga.uses_groups == True:
+					print_info("Picking {} for chapter {}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
+				else:
+					print_info("Picking release {} for chapter {}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
 				del duplicates[int(choice)-1]
 				break
 			except:
@@ -118,7 +125,10 @@ def duplicate_chapters(chapters):
 			if 'interactive_mode' in globals():
 				interactive()
 			elif 'group_preference' in globals():
-				preference(group_preference)
+				if manga.uses_groups == True:
+					preference(group_preference)
+				else:
+					no_preference()
 			else:
 				no_preference()
 
@@ -176,6 +186,10 @@ elif re.match(r'.*kissmanga\.com/manga/.*', url, flags=re.IGNORECASE):
 else:
 	print_info("Invalid input.")
 	exit()
+
+# Print a warning if the user tries to specify --prefer-group with a site that doesn't use group names.
+if manga.uses_groups == False and 'group_preference' in globals():
+	print_info("Error: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
 
 chapters = manga.series_chapters()
 if len(chapters) > 1:

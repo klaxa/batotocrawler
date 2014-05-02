@@ -8,6 +8,8 @@ import urllib.request, urllib.error, urllib.parse
 from Crawler import Crawler
 
 class KissManga(Crawler):
+	uses_groups = False
+
 	def __init__(self, url):
 		self.url = url
 		if re.match(r'.*kissmanga\.com/Manga/.*/', url, flags=re.IGNORECASE):

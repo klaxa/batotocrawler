@@ -8,6 +8,8 @@ import urllib.request, urllib.error, urllib.parse
 from Crawler import Crawler
 
 class Batoto(Crawler):
+	uses_groups = True
+
 	def __init__(self, url):
 		self.url = url
 		if re.match(r'.*batoto\.net/comic/.*', url):
