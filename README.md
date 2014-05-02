@@ -1,7 +1,7 @@
 batotocrawler
 =============
 
-Cralws batoto for mangas.
+Cralws Batoto or KissManga for manga.
 
 # REQUIREMENTS
 - Python 3.2.3 (untested on older versions)

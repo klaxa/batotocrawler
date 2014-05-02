@@ -16,7 +16,7 @@ def print_info(message, newline=True):
 			print(message)
 
 def download_file(url, filename):
-	file_extension = re.search(r'.*\.(.*)', url).group(1)
+	file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
 	filename = os.getcwd() + "/" + str(filename) + "." + file_extension
 
 	req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
@@ -57,15 +57,22 @@ def duplicate_chapters(chapters):
 			number_of_releases = numbers[len(duplicates)]
 
 		print_info("{} releases for chapter {}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
-		for item in duplicates[:-1]:
-			print_info("{}, ".format(item["group"]), newline=False)
-		print_info("{}.".format(duplicates[-1]["group"]))
+		try:
+			for item in duplicates[:-1]:
+				print_info("{}, ".format(item["group"]), newline=False)
+			print_info("{}.".format(duplicates[-1]["group"]))
+		except KeyError:
+			print()
 
 	def no_preference():
 		print_initial()
 
-		print_info("No preference set. Picking {} for chapter {}.".format(duplicates[-1]["group"], chapter["chapter"]))
-		for item in duplicates[:-1]:
+		try:
+			print_info("No preference set. Picking {} for chapter {}.".format(duplicates[0]["group"], chapter["chapter"]))
+		except KeyError:
+			print_info("No preference set. Picking latter chapter.")
+
+		for item in duplicates[1:]:
 			chapters.remove(item)
 
 	def preference(group):
@@ -163,6 +170,9 @@ else:
 if re.match(r'.*batoto\.net/.*', url):
 	from Batoto import Batoto
 	manga = Batoto(url)
+elif re.match(r'.*kissmanga\.com/manga/.*', url, flags=re.IGNORECASE):
+	from KissManga import KissManga
+	manga = KissManga(url)
 else:
 	print_info("Invalid input.")
 	exit()

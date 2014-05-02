@@ -12,10 +12,6 @@ class Crawler(metaclass=ABCMeta):
 		pass
 	
 	@abstractmethod
-	def chapter_pages(self, chapter_url):
-		pass
-	
-	@abstractmethod
 	def chapter_images(self, chapter_url):
 		pass
 	
