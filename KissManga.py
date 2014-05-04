@@ -1,11 +1,12 @@
 #/usr/bin/python
 
 from bs4 import BeautifulSoup
-import gzip
-import re
-import io
-import urllib.request, urllib.error, urllib.parse
 from Crawler import Crawler
+import gzip
+import io
+import logging
+import re
+import urllib.request, urllib.error, urllib.parse
 
 class KissManga(Crawler):
 	uses_groups = False
@@ -15,17 +16,23 @@ class KissManga(Crawler):
 		if re.match(r'.*kissmanga\.com/Manga/.*/', url, flags=re.IGNORECASE):
 			self.page = BeautifulSoup(self.open_url(self.chapter_series(url)))
 			self.init_with_chapter = True
+			logging.debug('Object initialized with chapter')
 		else:
 			self.page = BeautifulSoup(self.open_url(url))
 			self.init_with_chapter = False
+			logging.debug('Object initialized with series')
+		logging.debug('Object created with ' + url)
 
 	# Returns the series page for an individual chapter URL. Useful for scraping series metadata for an individual chapter.
 	def chapter_series(self, url):
+		logging.debug('Fetching series URL')
 		series_url = re.match(r'(.*kissmanga\.com/Manga/.*)/.*', url, flags=re.IGNORECASE).group(1)
+		logging.debug('Series URL: ' + series_url)
 		return series_url
 
 	# Returns a dictionary containing chapter number, chapter name and chapter URL.
 	def chapter_info(self, chapter_data):
+		logging.debug('Fetching chapter info')
 		chapter = BeautifulSoup(str(chapter_data))
 		chapter_url = 'http://kissmanga.com' + chapter.a['href']
 		chapter_number = re.search(r'{} (Ch\.)?([0-9\-]*).*'.format(self.series_info('title')), chapter.a.text).group(2)
@@ -35,10 +42,15 @@ class KissManga(Crawler):
 		except AttributeError:
 			chapter_name = None
 
+		logging.debug('Chapter number: ' + chapter_number)
+		logging.debug('Chapter name: ' + str(chapter_name))
+		logging.debug('Chapter URL: ' + chapter_url)
+
 		return {"chapter": chapter_number, "name": chapter_name, "url": chapter_url}
 
 	# Returns the image URL for the page.
 	def chapter_images(self, chapter_url):
+		logging.debug('Fetching chapter images')
 		image_list = []
 
 		page = BeautifulSoup(self.open_url(chapter_url.encode('ascii', 'ignore').decode('utf-8')))
@@ -49,10 +61,12 @@ class KissManga(Crawler):
 					image_list.append(re.search(r'lstImages\.push\("(.*)"\);', match).group(1))
 				break
 
+		logging.debug('Chapter images: ' + str(image_list))
 		return image_list
 
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
 	def open_url(self, url):
+		logging.debug(url)
 		req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
 		response = urllib.request.urlopen(req)
 
@@ -64,6 +78,7 @@ class KissManga(Crawler):
 			return reponse.read()
 
 	def series_chapters(self, all_chapters=False):
+		logging.debug('Fetching series chapters')
 		chapter_row = self.page.find("table", {"class": "listing"}).find_all("tr")[2:]
 		chapters = []
 		for chapter in chapter_row:
@@ -71,8 +86,10 @@ class KissManga(Crawler):
 
 		# If the object was initialized with a chapter, only return the chapters.
 		if self.init_with_chapter == True and all_chapters == False:
+			logging.debug('Searching for specified chapter')
 			for chapter in chapters:
 				if self.url == chapter["url"]:
+					logging.debug('Chapter found: ' + str(chapter))
 					return [chapter]
 
 		return chapters

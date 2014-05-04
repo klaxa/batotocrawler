@@ -15,6 +15,7 @@ Cralws Batoto or KissManga for manga.
     -e NUMBER                       chapter to end the downloading at
     -q, --quiet                     quiet mode: supresses info output (but not
                                     interactive output)
+    --debug                         debug mode: print various debugging information
     --cbz                           files are zipped with a ".cbz" extension instead
                                     of ".zip"
     --interactive                   asks which chapter to keep in case of duplicate

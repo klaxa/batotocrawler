@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import logging
 import getopt
 import os
 import os.path
@@ -7,6 +8,8 @@ import re
 import sys
 import urllib.request
 import zipfile
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(module)s: %(funcName)s: %(msg)s')
 
 def print_info(message, newline=True):
 	if not 'silent_mode' in globals():
@@ -56,7 +59,7 @@ def duplicate_chapters(chapters):
 		else:
 			number_of_releases = numbers[len(duplicates)]
 
-		if manga.uses_groups == True:
+		if manga.uses_groups:
 			print_info("{} releases for chapter {}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
 			for item in duplicates[:-1]:		
 				print_info("{}, ".format(item["group"]), newline=False)
@@ -67,7 +70,7 @@ def duplicate_chapters(chapters):
 	def no_preference():
 		print_initial()
 
-		if manga.uses_groups == True:
+		if manga.uses_groups:
 			print_info("No preference set. Picking {} for chapter {}.".format(duplicates[0]["group"], chapter["chapter"]))
 		else:
 			print_info("No preference set. Picking latter chapter.")
@@ -94,7 +97,7 @@ def duplicate_chapters(chapters):
 		print_initial()
 
 		for num, item in enumerate(duplicates, start=1):
-			if manga.uses_groups == True:
+			if manga.uses_groups:
 				print("{}. {}".format(num, item["group"]))
 			else:
 				print("{}. Release {}".format(num, num))
@@ -103,7 +106,7 @@ def duplicate_chapters(chapters):
 		while(True):
 			choice = input('>> ')
 			try:
-				if manga.uses_groups == True:
+				if manga.uses_groups:
 					print_info("Picking {} for chapter {}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
 				else:
 					print_info("Picking release {} for chapter {}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
@@ -116,6 +119,7 @@ def duplicate_chapters(chapters):
 		for item in duplicates:
 			chapters.remove(item)
 
+	logging.debug('Searching duplicate chapters')
 	for num, chapter in enumerate(chapters):
 		duplicates = [chapter]
 		for chapter2 in chapters[num+1:]:
@@ -125,12 +129,14 @@ def duplicate_chapters(chapters):
 			if 'interactive_mode' in globals():
 				interactive()
 			elif 'group_preference' in globals():
-				if manga.uses_groups == True:
+				if manga.uses_groups:
 					preference(group_preference)
 				else:
+					logging.debug('Unable to use group preference with site: using no_preference as fallback')
 					no_preference()
 			else:
 				no_preference()
+	logging.debug('Duplicate chapter search finished')
 
 def read_config():
 	config_file = os.environ['HOME'] + '/.config/batotocrawler.conf'
@@ -146,8 +152,9 @@ def read_config():
 	return config_data
 
 # Combine the config file and command-line arguments and split them into options and arguments.
-arguments = read_config() + sys.argv[1:]
-optlist, args = getopt.getopt(arguments, 'qs:e:', ['prefer-group=', 'interactive', 'quiet', 'cbz'])
+user_config = read_config()
+arguments = user_config + sys.argv[1:]
+optlist, args = getopt.getopt(arguments, 'qs:e:', ['prefer-group=', 'interactive', 'quiet', 'debug', 'cbz'])
 
 # If there are options provided, declare the applicable variables with values.
 if len(optlist) > 0:
@@ -160,12 +167,17 @@ if len(optlist) > 0:
 			silent_mode = True
 		elif opt == "--quiet":
 			silent_mode = True
+		elif opt == "--debug":
+			logging.getLogger().setLevel(logging.DEBUG)
 		elif opt == "--interactive":
 			interactive_mode = True
 		elif opt == "--prefer-group":
 			group_preference = arg
 		elif opt == "--cbz":
 			cbz_mode = True
+
+logging.debug('User config: ' + str(user_config))
+logging.debug('Command-line args: ' + str(sys.argv[1:]))
 
 # If there are no arguments provided, ask user for input. If there is more than one argument, reject input. Otherwise use the input as the URL.
 if len(args) == 0:
@@ -178,9 +190,11 @@ else:
 
 # Intializes the manga object if the URL is valid and has a scraper.
 if re.match(r'.*batoto\.net/.*', url):
+	logging.debug('URL match: Batoto')
 	from Batoto import Batoto
 	manga = Batoto(url)
 elif re.match(r'.*kissmanga\.com/manga/.*', url, flags=re.IGNORECASE):
+	logging.debug('URL match: KissManga')
 	from KissManga import KissManga
 	manga = KissManga(url)
 else:
@@ -189,7 +203,7 @@ else:
 
 # Print a warning if the user tries to specify --prefer-group with a site that doesn't use group names.
 if manga.uses_groups == False and 'group_preference' in globals():
-	print_info("Error: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
+	print_info("WARNING: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
 
 chapters = manga.series_chapters()
 if len(chapters) > 1:
@@ -233,10 +247,11 @@ for chapter in chapters[start_num:end_num:-1]:
 
 	clean_title = clean_filename(manga.series_info("title"))
 	image_list = manga.chapter_images(chapter["url"])
+	image_count = len(image_list)
 	file_list = []
 
 	for image_name, image_url in enumerate(image_list, start=1):
-		print_info("Download: Page " + "{0:04d}".format(image_name))
+		print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
 		downloaded_file = download_file(image_url, "{0:04d}".format(image_name))
 		file_list.append(downloaded_file)
 
