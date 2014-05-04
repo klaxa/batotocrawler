@@ -23,7 +23,11 @@ def download_file(url, filename):
 	filename = os.getcwd() + "/" + str(filename) + "." + file_extension
 
 	req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
-	response = urllib.request.urlopen(req)
+	try:
+		response = urllib.request.urlopen(req)
+	except urllib.error.HTTPError as e:
+		print_info('WARNING: Unable to download file ({}).'.format(str(e)))
+		return None
 
 	f = open(filename, 'wb')
 	f.write(response.read())
@@ -239,6 +243,7 @@ if 'chapters_end' in locals() and len(chapters) > 1:
 else:
 	end_num = None
 
+warnings = []
 for chapter in chapters[start_num:end_num:-1]:
 	if chapter["name"] != None:
 		print_info("Chapter " + chapter["chapter"] + " - " + chapter["name"])
@@ -253,7 +258,10 @@ for chapter in chapters[start_num:end_num:-1]:
 	for image_name, image_url in enumerate(image_list, start=1):
 		print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
 		downloaded_file = download_file(image_url, "{0:04d}".format(image_name))
-		file_list.append(downloaded_file)
+		if downloaded_file == None:
+			warnings.append('WARNING: Download of page {}, chapter {} failed.'.format(image_name, chapter["chapter"]))
+		else:
+			file_list.append(downloaded_file)
 
 	'''If the "chapter number" string contains a floating point number, the integer part is padded to four digits and the decimal part is added to it.
 	If the "chapter number" contains only numbers, it is padded to four digits.
@@ -264,3 +272,8 @@ for chapter in chapters[start_num:end_num:-1]:
 		zip_files(file_list, clean_title + "_c" + chapter["chapter"].zfill(4) + ".0")
 	else:
 		zip_files(file_list, clean_title + "_" + chapter["chapter"])
+
+if len(warnings) > 0:
+	print()
+	for warning in warnings:
+		print(warning)
