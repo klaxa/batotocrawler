@@ -151,10 +151,10 @@ class Batoto(Crawler):
 				for chapter2 in chapters[num+1:]:
 					if chapter["chapter"] == chapter2["chapter"]:
 						if chapter["version"] > chapter2["version"]:
-							logging.debug('Removing old version: ' + chapter2)
+							logging.debug('Removing old version: ' + str(chapter2))
 							chapters.remove(chapter2)
 						elif chapter["version"] < chapter2["version"]:
-							logging.debug('Removing old version: ' + chapter)
+							logging.debug('Removing old version: ' + str(chapter))
 							chapters.remove(chapter)
 
 		return chapters
