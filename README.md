@@ -13,6 +13,7 @@ Crawls Batoto or KissManga for manga.
 # OPTIONS
     -s NUMBER                       chapter to start downloading from
     -e NUMBER                       chapter to end the downloading at
+    -d                              directory (absolute or relative) to download to
     -q, --quiet                     quiet mode: supresses info output (but not
                                     interactive output)
     --debug                         debug mode: print various debugging information

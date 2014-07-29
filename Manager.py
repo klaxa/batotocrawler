@@ -20,7 +20,10 @@ def print_info(message, newline=True):
 
 def download_file(url, filename):
 	file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
-	filename = os.getcwd() + "/" + str(filename) + "." + file_extension
+	if 'download_dir' in globals():
+		filename = download_dir + "/" + str(filename) + "." + file_extension
+	else:
+		filename = os.getcwd() + "/" + str(filename) + "." + file_extension
 
 	req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
 	try:
@@ -47,7 +50,10 @@ def zip_files(filelist, filename):
 	else:
 		file_extension = ".zip"
 
-	filename = os.getcwd() + "/" + filename + file_extension
+	if 'download_dir' in globals():
+		filename = download_dir + "/" + filename + file_extension
+	else:
+		filename = os.getcwd() + "/" + filename + file_extension
 	zipf = zipfile.ZipFile(filename, mode="w")
 	for f in filelist:
 		zipf.write(f, os.path.basename(f))
@@ -158,7 +164,10 @@ def read_config():
 # Combine the config file and command-line arguments and split them into options and arguments.
 user_config = read_config()
 arguments = user_config + sys.argv[1:]
-optlist, args = getopt.getopt(arguments, 'qs:e:', ['prefer-group=', 'interactive', 'quiet', 'debug', 'cbz'])
+optlist, args = getopt.getopt(arguments, 'qs:e:d:', ['prefer-group=', 'interactive', 'quiet', 'debug', 'cbz'])
+
+logging.debug('User config: ' + str(user_config))
+logging.debug('Command-line args: ' + str(sys.argv[1:]))
 
 # If there are options provided, declare the applicable variables with values.
 if len(optlist) > 0:
@@ -179,9 +188,10 @@ if len(optlist) > 0:
 			group_preference = arg
 		elif opt == "--cbz":
 			cbz_mode = True
-
-logging.debug('User config: ' + str(user_config))
-logging.debug('Command-line args: ' + str(sys.argv[1:]))
+		elif opt == "-d":
+			download_dir = os.path.abspath(os.path.expanduser(arg))
+			if os.path.exists(download_dir) == False:
+				os.makedirs(download_dir)
 
 # If there are no arguments provided, ask user for input. If there is more than one argument, reject input. Otherwise use the input as the URL.
 if len(args) == 0:
