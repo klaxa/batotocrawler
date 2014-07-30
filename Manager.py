@@ -12,7 +12,7 @@ import zipfile
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(module)s: %(funcName)s: %(msg)s')
 
 def print_info(message, newline=True):
-	if not 'silent_mode' in globals():
+	if config.quiet_mode == False:
 		if newline == False:
 			print(message, end="")
 		else:
@@ -20,7 +20,7 @@ def print_info(message, newline=True):
 
 def download_file(url, filename):
 	file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
-	if 'download_dir' in globals():
+	if download_dir != None:
 		filename = download_dir + "/" + str(filename) + "." + file_extension
 	else:
 		filename = os.getcwd() + "/" + str(filename) + "." + file_extension
@@ -38,19 +38,20 @@ def download_file(url, filename):
 
 	return filename
 
-def clean_filename(filename):
+def clean_filename(filename, underscore=True):
 	filename = re.sub('[/:;|]', '', filename)
-	filename = re.sub('[\s]+', '_', filename)
+	if underscore == True:
+		filename = re.sub('[\s]+', '_', filename)
 	filename = re.sub('__', '_', filename)
 	return filename
 
 def zip_files(filelist, filename):
-	if 'cbz_mode' in globals():
+	if config.cbz_mode == True:
 		file_extension = ".cbz"
 	else:
 		file_extension = ".zip"
 
-	if 'download_dir' in globals():
+	if download_dir != None:
 		filename = download_dir + "/" + filename + file_extension
 	else:
 		filename = os.getcwd() + "/" + filename + file_extension
@@ -136,9 +137,9 @@ def duplicate_chapters(chapters):
 			if chapter["chapter"] == chapter2["chapter"]:
 				duplicates.append(chapter2)
 		if len(duplicates) > 1:
-			if 'interactive_mode' in globals():
+			if config.interactive_mode == True:
 				interactive()
-			elif 'group_preference' in globals():
+			elif config.group_preference != None:
 				if manga.uses_groups:
 					preference(group_preference)
 				else:
@@ -148,142 +149,151 @@ def duplicate_chapters(chapters):
 				no_preference()
 	logging.debug('Duplicate chapter search finished')
 
-def read_config():
+def generate_config():
+	class Configuration(object):
+		def __init__(self):
+			self.cbz_mode = False
+			self.chapter_end = None
+			self.chapter_start = None
+			self.download_directory = None
+			self.group_preference = None
+			self.interactive_mode = False
+			self.quiet_mode = False
+			self.urls = None
+			
+	config = Configuration()
 	config_file = os.environ['HOME'] + '/.config/batotocrawler.conf'
-	config_data = []
 
+	user_config = []
 	# Open the config file for reading, go through it line by line and if line doesn't start with #, add it as a arg.
 	if os.path.isfile(config_file):
 		with open(config_file, 'r') as f:
 			for line in f:
 				if line[0] != '#':
-					config_data += line.split()
+					user_config += line.split()
 
-	return config_data
+	arguments = user_config + sys.argv[1:]
+	optlist, args = getopt.getopt(arguments, 'e:d:qs:', ['cbz', 'debug', 'interactive', 'prefer-group=', 'quiet'])
+	logging.debug('User config: ' + str(user_config))
+	logging.debug('Command-line args: ' + str(sys.argv[1:]))
 
-# Combine the config file and command-line arguments and split them into options and arguments.
-user_config = read_config()
-arguments = user_config + sys.argv[1:]
-optlist, args = getopt.getopt(arguments, 'qs:e:d:', ['prefer-group=', 'interactive', 'quiet', 'debug', 'cbz'])
+	if len(optlist) > 0:
+		for opt, arg in optlist:
+			if opt == '--cbz':
+				setattr(config, 'cbz_mode', True)
+			elif opt == '-d':
+				setattr(config, 'download_directory', os.path.abspath(os.path.expanduser(arg)))
+			elif opt == '--debug':
+				logging.getLogger().setLevel(logging.DEBUG)
+			elif opt == '-e':
+				setattr(config, 'chapter_end', arg)
+			elif opt == '--interactive':
+				setattr(config, 'interactive_mode', True)
+			elif opt == '--prefer-group':
+				setattr(config, 'group_preference', arg)
+			elif opt == '-q':
+				setattr(config, 'quiet_mode', True)
+			elif opt == '--quiet':
+				setattr(config, 'quiet_mode', True)
+			elif opt == '-s':
+				setattr(config, 'chapter_start', arg)
 
-logging.debug('User config: ' + str(user_config))
-logging.debug('Command-line args: ' + str(sys.argv[1:]))
-
-# If there are options provided, declare the applicable variables with values.
-if len(optlist) > 0:
-	for opt, arg in optlist:
-		if opt == "-s":
-			chapters_start = arg
-		elif opt == "-e":
-			chapters_end = arg
-		elif opt == "-q":
-			silent_mode = True
-		elif opt == "--quiet":
-			silent_mode = True
-		elif opt == "--debug":
-			logging.getLogger().setLevel(logging.DEBUG)
-		elif opt == "--interactive":
-			interactive_mode = True
-		elif opt == "--prefer-group":
-			group_preference = arg
-		elif opt == "--cbz":
-			cbz_mode = True
-		elif opt == "-d":
-			download_dir = os.path.abspath(os.path.expanduser(arg))
-			if os.path.exists(download_dir) == False:
-				os.makedirs(download_dir)
-
-# If there are no arguments provided, ask user for input. If there is more than one argument, reject input. Otherwise use the input as the URL.
-if len(args) == 0:
-	url = input('>> ')
-elif len(args) > 1:
-	print_info("Too many args.")
-	exit()
-else:
-	url = sys.argv.pop()
-
-# Intializes the manga object if the URL is valid and has a scraper.
-if re.match(r'.*batoto\.net/.*', url):
-	logging.debug('URL match: Batoto')
-	from Batoto import Batoto
-	manga = Batoto(url)
-elif re.match(r'.*kissmanga\.com/manga/.*', url, flags=re.IGNORECASE):
-	logging.debug('URL match: KissManga')
-	from KissManga import KissManga
-	manga = KissManga(url)
-else:
-	print_info("Invalid input.")
-	exit()
-
-# Print a warning if the user tries to specify --prefer-group with a site that doesn't use group names.
-if manga.uses_groups == False and 'group_preference' in globals():
-	print_info("WARNING: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
-
-chapters = manga.series_chapters()
-if len(chapters) > 1:
-	duplicate_chapters(chapters)
-
-'''If there is a end variable declared and more than one chapter,
-look for it by comparing it chapter["chapter"] strings. If the string
-isn't found or no start variable is declared, iteration is started from 0.'''
-if 'chapters_start' in locals() and len(chapters) > 1:
-	start_num = -1
-	for num, chapter in enumerate(chapters):
-		if chapters_start == chapter["chapter"]:
-			print_info("Starting download at chapter " + chapter["chapter"])
-			start_num = num
-			break
-	if start_num == -1:
-		print_info("Defined starting chapter not found. Starting from chapter " + chapters[-1]["chapter"] + ".")
-else:
-	start_num = -1
-
-'''If there is a end variable declared and more than one chapter,
-look for it by comparing it chapter["chapter"] strings. If the string
-isn't found or no end variable is declared, iteration is done to list end.'''
-if 'chapters_end' in locals() and len(chapters) > 1:
-	end_num = None
-	for num, chapter in enumerate(chapters):
-		if chapters_end == chapter["chapter"]:
-			print_info("Ending download at chapter " + chapter["chapter"])
-			end_num = num - 1
-			break
-	if end_num == None:
-		print_info("Defined end chapter not found. Ending at chapter " + chapters[0]["chapter"] + ".")
-else:
-	end_num = None
-
-warnings = []
-for chapter in chapters[start_num:end_num:-1]:
-	if chapter["name"] != None:
-		print_info("Chapter " + chapter["chapter"] + " - " + chapter["name"])
+	if len(args) == 0:
+		url = input('>> ')
+		setattr(config, 'urls', [url])
 	else:
-		print_info("Chapter " + chapter["chapter"])
+		setattr(config, 'urls', args)
 
-	clean_title = clean_filename(manga.series_info("title"))
-	image_list = manga.chapter_images(chapter["url"])
-	image_count = len(image_list)
-	file_list = []
+	return config
 
-	for image_name, image_url in enumerate(image_list, start=1):
-		print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
-		downloaded_file = download_file(image_url, "{0:04d}".format(image_name))
-		if downloaded_file == None:
-			warnings.append('WARNING: Download of page {}, chapter {} failed.'.format(image_name, chapter["chapter"]))
+config = generate_config()
+
+for url in config.urls:
+	# Intializes the manga object if the URL is valid and has a scraper.
+	if re.match(r'.*batoto\.net/.*', url):
+		logging.debug('URL match: Batoto')
+		from Batoto import Batoto
+		manga = Batoto(url)
+	elif re.match(r'.*kissmanga\.com/manga/.*', url, flags=re.IGNORECASE):
+		logging.debug('URL match: KissManga')
+		from KissManga import KissManga
+		manga = KissManga(url)
+	else:
+		print_info("Invalid input.")
+		exit()
+
+	# Print a warning if the user tries to specify --prefer-group with a site that doesn't use group names.
+	if manga.uses_groups == False and config.group_preference != None:
+		print_info("WARNING: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
+
+	chapters = manga.series_chapters()
+	if len(chapters) > 1:
+		duplicate_chapters(chapters)
+
+	# Look for the chapter to start from if '-s' is used.
+	if config.chapter_start != None and len(chapters) > 1:
+		start_num = -1
+		for num, chapter in enumerate(chapters):
+			if config.chapter_start == chapter["chapter"]:
+				print_info("Starting download at chapter " + chapter["chapter"])
+				start_num = num
+				break
+		if start_num == -1:
+			print_info("Defined starting chapter not found. Starting from chapter " + chapters[-1]["chapter"] + ".")
+	else:
+		start_num = -1
+
+	# Look for the chapter to end at if '-e' is used.
+	if config.chapter_end != None and len(chapters) > 1:
+		end_num = None
+		for num, chapter in enumerate(chapters):
+			if config.chapter_end == chapter["chapter"]:
+				print_info("Ending download at chapter " + chapter["chapter"])
+				end_num = num - 1
+				break
+		if end_num == None:
+			print_info("Defined end chapter not found. Ending at chapter " + chapters[0]["chapter"] + ".")
+	else:
+		end_num = None
+
+	if config.download_directory != None:
+		download_dir = config.download_directory.replace('%title', clean_filename(manga.series_info("title"), underscore=False))
+		if os.path.exists(download_dir) == False:
+			os.makedirs(download_dir)
+	else:
+		download_dir = None
+
+	warnings = []
+	for chapter in chapters[start_num:end_num:-1]:
+		if chapter["name"] != None:
+			print_info("Chapter " + chapter["chapter"] + " - " + chapter["name"])
 		else:
-			file_list.append(downloaded_file)
+			print_info("Chapter " + chapter["chapter"])
 
-	'''If the "chapter number" string contains a floating point number, the integer part is padded to four digits and the decimal part is added to it.
-	If the "chapter number" contains only numbers, it is padded to four digits.
-	If the "chapter number" is something else (like 'extra'), it is not padded. Also, the '_c' prefix is omitted.'''
-	if re.match(r'[0-9]*\.[0-9]*', chapter["chapter"]):
-		zip_files(file_list, clean_title + "_c" + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(1).zfill(4) + "." + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(2))
-	elif re.match(r'^[0-9]', chapter["chapter"]):
-		zip_files(file_list, clean_title + "_c" + chapter["chapter"].zfill(4) + ".0")
-	else:
-		zip_files(file_list, clean_title + "_" + chapter["chapter"])
+		clean_title = clean_filename(manga.series_info("title"))
+		image_list = manga.chapter_images(chapter["url"])
+		image_count = len(image_list)
+		file_list = []
 
-if len(warnings) > 0:
-	print()
-	for warning in warnings:
-		print(warning)
+		for image_name, image_url in enumerate(image_list, start=1):
+			print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
+			downloaded_file = download_file(image_url, "{0:04d}".format(image_name))
+			if downloaded_file == None:
+				warnings.append('WARNING: Download of page {}, chapter {} failed.'.format(image_name, chapter["chapter"]))
+			else:
+				file_list.append(downloaded_file)
+
+		'''If the "chapter number" string contains a floating point number, the integer part is padded to four digits and the decimal part is added to it.
+		If the "chapter number" contains only numbers, it is padded to four digits.
+		If the "chapter number" is something else (like 'extra'), it is not padded. Also, the '_c' prefix is omitted.'''
+		if re.match(r'[0-9]*\.[0-9]*', chapter["chapter"]):
+			zip_files(file_list, clean_title + "_c" + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(1).zfill(4) + "." + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(2))
+		elif re.match(r'^[0-9]', chapter["chapter"]):
+			zip_files(file_list, clean_title + "_c" + chapter["chapter"].zfill(4) + ".0")
+		else:
+			zip_files(file_list, clean_title + "_" + chapter["chapter"])
+
+	if len(warnings) > 0:
+		print()
+		for warning in warnings:
+			print(warning)
