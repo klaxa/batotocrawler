@@ -226,35 +226,32 @@ for url in config.urls:
 	if manga.uses_groups == False and config.group_preference != None:
 		print_info("WARNING: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
 
-	chapters = manga.series_chapters()
-	if len(chapters) > 1:
-		duplicate_chapters(chapters)
+	chapters = manga.series_chapters()[::-1]
 
 	# Look for the chapter to start from if '-s' is used.
 	if config.chapter_start != None and len(chapters) > 1:
-		start_num = -1
+		chapter_count = len(chapters)
 		for num, chapter in enumerate(chapters):
 			if config.chapter_start == chapter["chapter"]:
 				print_info("Starting download at chapter " + chapter["chapter"])
-				start_num = num
+				del chapters[:num]
 				break
-		if start_num == -1:
-			print_info("Defined starting chapter not found. Starting from chapter " + chapters[-1]["chapter"] + ".")
-	else:
-		start_num = -1
+			elif num == chapter_count - 1:
+				print_info("Defined start chapter not found. Starting at chapter " + chapters[0]["chapter"] + ".")
 
 	# Look for the chapter to end at if '-e' is used.
 	if config.chapter_end != None and len(chapters) > 1:
-		end_num = None
+		chapter_count = len(chapters)
 		for num, chapter in enumerate(chapters):
 			if config.chapter_end == chapter["chapter"]:
 				print_info("Ending download at chapter " + chapter["chapter"])
-				end_num = num - 1
+				del chapters[num+1:]
 				break
-		if end_num == None:
-			print_info("Defined end chapter not found. Ending at chapter " + chapters[0]["chapter"] + ".")
-	else:
-		end_num = None
+			elif num == chapter_count - 1:
+				print_info("Defined end chapter not found. Ending at chapter " + chapters[-1]["chapter"] + ".")
+
+	if len(chapters) > 1:
+		duplicate_chapters(chapters)
 
 	if config.download_directory != None:
 		download_dir = config.download_directory.replace('%title', clean_filename(manga.series_info("title"), underscore=False))
@@ -264,7 +261,7 @@ for url in config.urls:
 		download_dir = None
 
 	warnings = []
-	for chapter in chapters[start_num:end_num:-1]:
+	for chapter in chapters:
 		if chapter["name"] != None:
 			print_info("Chapter " + chapter["chapter"] + " - " + chapter["name"])
 		else:
