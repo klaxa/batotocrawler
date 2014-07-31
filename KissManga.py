@@ -1,5 +1,6 @@
 #/usr/bin/python
 
+from __main__ import print_info
 from bs4 import BeautifulSoup
 from Crawler import Crawler
 import gzip
@@ -65,6 +66,41 @@ class KissManga(Crawler):
 
 		logging.debug('Chapter images: ' + str(image_list))
 		return image_list
+
+	def download_chapter(self, chapter, download_directory, download_name):
+		files = []
+		warnings = []
+
+		logging.debug('Downloading chapter {}.'.format(chapter["url"]))
+		page = BeautifulSoup(self.open_url(chapter["url"].encode('ascii', 'ignore').decode('utf-8')))
+		scripts = page.find("div", {"id": "containerRoot"}).find_all('script')
+		for script in scripts:
+			if re.search(r'lstImages', script.text):
+				matches = re.findall(r'lstImages\.push\(".*"\);', script.text)
+				image_count = len(matches)
+				for image_name, match in enumerate(matches, start=1):
+					print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
+					image_url = re.search(r'lstImages\.push\("(.*)"\);', match).group(1)
+					file_extension = re.search(r'.*\.([A-Za-z]*)', image_url).group(1)
+					req = urllib.request.Request(image_url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
+
+					try:
+						response = urllib.request.urlopen(req)
+					except urllib.error.HTTPError as e:
+						print_info('WARNING: Unable to download file ({}).'.format(str(e)))
+						warnings.append('Download of page {}, chapter {}, series "{}" failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
+						continue
+
+					filename = download_directory + "/" + str(image_name) + "." + file_extension
+					f = open(filename, 'wb')
+					f.write(response.read())
+					f.close()
+					files.append(filename)
+				break
+
+		filename = download_directory + '/' + download_name
+		self.zip_files(files, filename)
+		return warnings
 
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
 	def open_url(self, url):

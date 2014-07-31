@@ -3,11 +3,8 @@
 import logging
 import getopt
 import os
-import os.path
 import re
 import sys
-import urllib.request
-import zipfile
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(module)s: %(funcName)s: %(msg)s')
 
@@ -18,48 +15,12 @@ def print_info(message, newline=True):
 		else:
 			print(message)
 
-def download_file(url, filename):
-	file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
-	if download_dir != None:
-		filename = download_dir + "/" + str(filename) + "." + file_extension
-	else:
-		filename = os.getcwd() + "/" + str(filename) + "." + file_extension
-
-	req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
-	try:
-		response = urllib.request.urlopen(req)
-	except urllib.error.HTTPError as e:
-		print_info('WARNING: Unable to download file ({}).'.format(str(e)))
-		return None
-
-	f = open(filename, 'wb')
-	f.write(response.read())
-	f.close()
-
-	return filename
-
 def clean_filename(filename, underscore=True):
 	filename = re.sub('[/:;|]', '', filename)
 	if underscore == True:
 		filename = re.sub('[\s]+', '_', filename)
 	filename = re.sub('__', '_', filename)
 	return filename
-
-def zip_files(filelist, filename):
-	if config.cbz_mode == True:
-		file_extension = ".cbz"
-	else:
-		file_extension = ".zip"
-
-	if download_dir != None:
-		filename = download_dir + "/" + filename + file_extension
-	else:
-		filename = os.getcwd() + "/" + filename + file_extension
-	zipf = zipfile.ZipFile(filename, mode="w")
-	for f in filelist:
-		zipf.write(f, os.path.basename(f))
-		os.remove(f)
-	print_info("Zip created: " + filename.replace(os.environ['HOME'], "~"))
 
 def duplicate_chapters(chapters):
 	numbers = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
@@ -207,6 +168,7 @@ def generate_config():
 	return config
 
 config = generate_config()
+warnings = []
 
 for url in config.urls:
 	# Intializes the manga object if the URL is valid and has a scraper.
@@ -258,9 +220,8 @@ for url in config.urls:
 		if os.path.exists(download_dir) == False:
 			os.makedirs(download_dir)
 	else:
-		download_dir = None
+		download_dir = os.getcwd()
 
-	warnings = []
 	for chapter in chapters:
 		if chapter["name"] != None:
 			print_info("Chapter " + chapter["chapter"] + " - " + chapter["name"])
@@ -268,29 +229,22 @@ for url in config.urls:
 			print_info("Chapter " + chapter["chapter"])
 
 		clean_title = clean_filename(manga.series_info("title"))
-		image_list = manga.chapter_images(chapter["url"])
-		image_count = len(image_list)
-		file_list = []
 
-		for image_name, image_url in enumerate(image_list, start=1):
-			print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
-			downloaded_file = download_file(image_url, "{0:04d}".format(image_name))
-			if downloaded_file == None:
-				warnings.append('WARNING: Download of page {}, chapter {} failed.'.format(image_name, chapter["chapter"]))
-			else:
-				file_list.append(downloaded_file)
-
-		'''If the "chapter number" string contains a floating point number, the integer part is padded to four digits and the decimal part is added to it.
-		If the "chapter number" contains only numbers, it is padded to four digits.
-		If the "chapter number" is something else (like 'extra'), it is not padded. Also, the '_c' prefix is omitted.'''
 		if re.match(r'[0-9]*\.[0-9]*', chapter["chapter"]):
-			zip_files(file_list, clean_title + "_c" + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(1).zfill(4) + "." + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(2))
+			output_name = clean_title + "_c" + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(1).zfill(4) + "." + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(2)
 		elif re.match(r'^[0-9]', chapter["chapter"]):
-			zip_files(file_list, clean_title + "_c" + chapter["chapter"].zfill(4) + ".0")
+			output_name = clean_title + "_c" + chapter["chapter"].zfill(4) + ".0"
 		else:
-			zip_files(file_list, clean_title + "_" + chapter["chapter"])
+			output_name = clean_title + "_" + chapter["chapter"]
 
-	if len(warnings) > 0:
-		print()
-		for warning in warnings:
-			print(warning)
+		if config.cbz_mode == True:
+			output_name += ".cbz"
+		else:
+			output_name += ".zip"
+
+		warnings += manga.download_chapter(chapter, download_dir, output_name)
+
+if len(warnings) > 0:
+	print('\nFollowing warnings were encountered during runtime:')
+	for warning in warnings:
+		print(warning)
