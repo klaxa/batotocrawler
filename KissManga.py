@@ -36,16 +36,21 @@ class KissManga(Crawler):
 		logging.debug('Fetching chapter info')
 		chapter = BeautifulSoup(str(chapter_data))
 		chapter_url = 'http://kissmanga.com' + chapter.a['href']
-		chapter_number = re.search(r'{} (Ch\.)?([0-9\.]*).*'.format(self.series_info('title')), chapter.a.text).group(2)
+		chapter_number = re.search(r'{} (Vol\.[0-9]* )?(Ch\.)?([0-9\.]*).*'.format(self.series_info('title')), chapter.a.text).group(3)
 		if chapter_number == '':
 			chapter_number = re.search(r'{} .* ([0-9\.]*) -.*'.format(self.series_info('title')), chapter.a.text).group(1)
+
+		try:
+			chapter_number = float(chapter_number)
+		except ValueError:
+			pass
 
 		try:
 			chapter_name = re.search(r'.*: (.*)', chapter.a.text).group(1)
 		except AttributeError:
 			chapter_name = None
 
-		logging.debug('Chapter number: ' + chapter_number)
+		logging.debug('Chapter number: {}'.format(chapter_number))
 		logging.debug('Chapter name: ' + str(chapter_name))
 		logging.debug('Chapter URL: ' + chapter_url)
 
@@ -88,7 +93,7 @@ class KissManga(Crawler):
 						response = urllib.request.urlopen(req)
 					except urllib.error.HTTPError as e:
 						print_info('WARNING: Unable to download file ({}).'.format(str(e)))
-						warnings.append('Download of page {}, chapter {}, series "{}" failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
+						warnings.append('Download of page {}, chapter {:g}, series "{}" failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
 						continue
 
 					filename = download_directory + "/" + str(image_name) + "." + file_extension

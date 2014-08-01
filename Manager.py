@@ -32,18 +32,18 @@ def duplicate_chapters(chapters):
 			number_of_releases = numbers[len(duplicates)]
 
 		if manga.uses_groups:
-			print_info("{} releases for chapter {}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
+			print_info("{} releases for chapter {:g}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
 			for item in duplicates[:-1]:		
 				print_info("{}, ".format(item["group"]), newline=False)
 			print_info("{}.".format(duplicates[-1]["group"]))
 		else:
-			print_info("{} releases for chapter {}".format(number_of_releases, duplicates[0]["chapter"]))
+			print_info("{} releases for chapter {:g}".format(number_of_releases, duplicates[0]["chapter"]))
 
 	def no_preference():
 		print_initial()
 
 		if manga.uses_groups:
-			print_info("No preference set. Picking {} for chapter {}.".format(duplicates[0]["group"], chapter["chapter"]))
+			print_info("No preference set. Picking {} for chapter {:g}.".format(duplicates[0]["group"], chapter["chapter"]))
 		else:
 			print_info("No preference set. Picking latter chapter.")
 
@@ -55,13 +55,13 @@ def duplicate_chapters(chapters):
 
 		for item in duplicates:
 			if item["group"] == group:
-				print_info("Preference: {}. Picking {} for chapter {}.".format(group, item["group"], item["chapter"]))
+				print_info("Preference: {}. Picking {} for chapter {:g}.".format(group, item["group"], item["chapter"]))
 				duplicates.remove(item)
 				for item in duplicates:
 					chapters.remove(item)
 				return
 
-		print_info("Preference: {}. Not found. Picking {} for chapter {}.".format(group, duplicates[-1]["group"], duplicates[-1]["chapter"]))
+		print_info("Preference: {}. Not found. Picking {} for chapter {:g}.".format(group, duplicates[-1]["group"], duplicates[-1]["chapter"]))
 		for item in duplicates[:-1]:
 			chapters.remove(item)
 
@@ -79,9 +79,9 @@ def duplicate_chapters(chapters):
 			choice = input('>> ')
 			try:
 				if manga.uses_groups:
-					print_info("Picking {} for chapter {}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
+					print_info("Picking {} for chapter {:g}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
 				else:
-					print_info("Picking release {} for chapter {}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
+					print_info("Picking release {} for chapter {:g}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
 				del duplicates[int(choice)-1]
 				break
 			except:
@@ -113,10 +113,10 @@ def duplicate_chapters(chapters):
 def generate_config():
 	class Configuration(object):
 		def __init__(self):
-			self.cbz_mode = False
 			self.chapter_end = None
 			self.chapter_start = None
 			self.download_directory = None
+			self.file_extension = 'zip'
 			self.group_preference = None
 			self.interactive_mode = False
 			self.quiet_mode = False
@@ -141,7 +141,7 @@ def generate_config():
 	if len(optlist) > 0:
 		for opt, arg in optlist:
 			if opt == '--cbz':
-				setattr(config, 'cbz_mode', True)
+				setattr(config, 'file_extension', 'cbz')
 			elif opt == '-d':
 				setattr(config, 'download_directory', os.path.abspath(os.path.expanduser(arg)))
 			elif opt == '--debug':
@@ -194,23 +194,23 @@ for url in config.urls:
 	if config.chapter_start != None and len(chapters) > 1:
 		chapter_count = len(chapters)
 		for num, chapter in enumerate(chapters):
-			if config.chapter_start == chapter["chapter"]:
-				print_info("Starting download at chapter " + chapter["chapter"])
+			if config.chapter_start == '{:g}'.format(chapter["chapter"]):
+				print_info("Starting download at chapter {:g}.".format(chapter["chapter"]))
 				del chapters[:num]
 				break
 			elif num == chapter_count - 1:
-				print_info("Defined start chapter not found. Starting at chapter " + chapters[0]["chapter"] + ".")
+				print_info("Defined start chapter not found. Starting at chapter {:g}.".format(chapters[0]["chapter"]))
 
 	# Look for the chapter to end at if '-e' is used.
 	if config.chapter_end != None and len(chapters) > 1:
 		chapter_count = len(chapters)
 		for num, chapter in enumerate(chapters):
-			if config.chapter_end == chapter["chapter"]:
-				print_info("Ending download at chapter " + chapter["chapter"])
+			if config.chapter_end == '{:g}'.format(chapter["chapter"]):
+				print_info("Ending download at chapter {:g}.".format(chapter["chapter"]))
 				del chapters[num+1:]
 				break
 			elif num == chapter_count - 1:
-				print_info("Defined end chapter not found. Ending at chapter " + chapters[-1]["chapter"] + ".")
+				print_info("Defined end chapter not found. Ending at chapter {:g}.".format(chapters[-1]["chapter"]))
 
 	if len(chapters) > 1:
 		duplicate_chapters(chapters)
@@ -224,23 +224,16 @@ for url in config.urls:
 
 	for chapter in chapters:
 		if chapter["name"] != None:
-			print_info("Chapter " + chapter["chapter"] + " - " + chapter["name"])
+			print_info("Chapter {:g} - {}".format(chapter["chapter"], chapter["name"]))
 		else:
-			print_info("Chapter " + chapter["chapter"])
+			print_info("Chapter {:g}".format(chapter["chapter"]))
 
 		clean_title = clean_filename(manga.series_info("title"))
 
-		if re.match(r'[0-9]*\.[0-9]*', chapter["chapter"]):
-			output_name = clean_title + "_c" + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(1).zfill(4) + "." + re.search(r'(.*)\.(.*)', chapter["chapter"]).group(2)
-		elif re.match(r'^[0-9]', chapter["chapter"]):
-			output_name = clean_title + "_c" + chapter["chapter"].zfill(4) + ".0"
+		if type(chapter["chapter"]) == float:
+			output_name = '{0}_c{1[0]:0>4}.{1[1]}.{2}'.format(clean_title, str(chapter["chapter"]).split('.'), config.file_extension)
 		else:
-			output_name = clean_title + "_" + chapter["chapter"]
-
-		if config.cbz_mode == True:
-			output_name += ".cbz"
-		else:
-			output_name += ".zip"
+			output_name = '{0}_{1}.{2}'.format(clean_title, chapter["chapter"], config.file_extension)
 
 		warnings += manga.download_chapter(chapter, download_dir, output_name)
 

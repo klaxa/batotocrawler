@@ -42,8 +42,15 @@ class Batoto(Crawler):
 		chapter = BeautifulSoup(str(chapter_data))
 		chapter_url = chapter.a['href']
 		chapter_number = re.search(r'Ch\.(.*?)[:\s].*', chapter.a.text).group(1)
+		if re.match(r'^[0-9]*[Vv][0-9]*', chapter_number):
+			chapter_number = re.search(r'^([0-9]*)[Vv][0-9]*', chapter_number).group(1)
 		chapter_group = chapter.select('a[href*="http://www.batoto.net/group/"]')[0].text
 		
+		try:
+			chapter_number = float(chapter_number)
+		except:
+			pass
+
 		try:
 			chapter_version = re.search(r'v([0-9]*)', chapter.a.text).group(1)
 		except AttributeError:
@@ -56,7 +63,7 @@ class Batoto(Crawler):
 		except AttributeError:
 			chapter_name = None
 
-		logging.debug('Chapter number: ' + chapter_number)
+		logging.debug('Chapter number: {}'.format(chapter_number))
 		logging.debug('Chapter name: ' + str(chapter_name))
 		logging.debug('Chapter URL: ' + chapter_url)
 		logging.debug('Chapter version: ' + chapter_version)
@@ -125,7 +132,7 @@ class Batoto(Crawler):
 					response = urllib.request.urlopen(req)
 				except urllib.error.HTTPError as e:
 					print_info('WARNING: Unable to download file ({}).'.format(str(e)))
-					warnings.append('Download of page {}, chapter {}, series {} failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
+					warnings.append('Download of page {}, chapter {:g}, series {} failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
 
 				filename = download_directory + "/" + str(image_name) + "." + file_extension
 				f = open(filename, 'wb')
@@ -148,7 +155,7 @@ class Batoto(Crawler):
 						response = urllib.request.urlopen(req)
 					except urllib.error.HTTPError as e:
 						print_info('WARNING: Unable to download file ({}).'.format(str(e)))
-						warnings.append('Download of page {}, chapter {}, series "{}" failed.'.format(image_name, chapter["chapter"], series_info('title')))
+						warnings.append('Download of page {}, chapter {:g}, series "{}" failed.'.format(image_name, chapter["chapter"], series_info('title')))
 						continue
 
 					filename = download_directory + "/" + str(image_name) + "." + file_extension
@@ -189,12 +196,6 @@ class Batoto(Crawler):
 		chapters = []
 		for chapter in chapter_row:
 			chapters.append(self.chapter_info(chapter))
-
-		# Remove the v2 part from chapters that have it after the number (34v2) so zip files will be named correctly later.
-		logging.debug('Removing version information from chapter numbers')
-		for chapter in chapters:
-			if re.match(r'^[0-9]*[Vv][0-9]*', chapter["chapter"]):
-				chapter["chapter"] = re.search(r'^([0-9]*)[Vv][0-9]*', chapter["chapter"]).group(1)
 
 		# If the object was initialized with a chapter, only return the chapters.
 		if self.init_with_chapter == True and all_chapters == False:
