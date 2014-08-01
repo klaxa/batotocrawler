@@ -1,5 +1,6 @@
 #/usr/bin/python
 
+from __main__ import print_info
 from bs4 import BeautifulSoup
 from Crawler import Crawler
 import gzip
@@ -41,8 +42,15 @@ class Batoto(Crawler):
 		chapter = BeautifulSoup(str(chapter_data))
 		chapter_url = chapter.a['href']
 		chapter_number = re.search(r'Ch\.(.*?)[:\s].*', chapter.a.text).group(1)
+		if re.match(r'^[0-9]*[Vv][0-9]*', chapter_number):
+			chapter_number = re.search(r'^([0-9]*)[Vv][0-9]*', chapter_number).group(1)
 		chapter_group = chapter.select('a[href*="http://www.batoto.net/group/"]')[0].text
 		
+		try:
+			chapter_number = float(chapter_number)
+		except:
+			pass
+
 		try:
 			chapter_version = re.search(r'v([0-9]*)', chapter.a.text).group(1)
 		except AttributeError:
@@ -55,7 +63,7 @@ class Batoto(Crawler):
 		except AttributeError:
 			chapter_name = None
 
-		logging.debug('Chapter number: ' + chapter_number)
+		logging.debug('Chapter number: {}'.format(chapter_number))
 		logging.debug('Chapter name: ' + str(chapter_name))
 		logging.debug('Chapter URL: ' + chapter_url)
 		logging.debug('Chapter version: ' + chapter_version)
@@ -67,7 +75,6 @@ class Batoto(Crawler):
 	def chapter_pages(self, chapter_url):
 		logging.debug('Fetching chapter pages')
 		chapter = BeautifulSoup(self.open_url(chapter_url))
-
 		page_urls = chapter.find("select", {"name": "page_select"}).find_all("option")
 
 		url_list = []
@@ -101,6 +108,67 @@ class Batoto(Crawler):
 		logging.debug('Chapter images: ' + str(image_list))
 		return image_list
 
+	def download_chapter(self, chapter, download_directory, download_name):
+		chapter_url = chapter["url"]
+		logging.debug('Downloading chapter {}.'.format(chapter_url))
+		chapter = BeautifulSoup(self.open_url(chapter_url))
+		files = []
+		warnings = []
+
+		try:
+			page_urls = chapter.find("select", {"name": "page_select"}).find_all("option")
+			pages = [page["value"] for page in page_urls]
+			logging.debug('Per page mode')
+			image_count = len(pages)
+
+			for image_name, page_url in enumerate(pages, start=1):
+				print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
+				page = BeautifulSoup(self.open_url(page_url))
+				url = page.find("div", {"id": "full_image"}).find("img")["src"]
+				file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
+
+				req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
+				try:
+					response = urllib.request.urlopen(req)
+				except urllib.error.HTTPError as e:
+					print_info('WARNING: Unable to download file ({}).'.format(str(e)))
+					warnings.append('Download of page {}, chapter {:g}, series {} failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
+
+				filename = download_directory + "/" + str(image_name) + "." + file_extension
+				f = open(filename, 'wb')
+				f.write(response.read())
+				f.close()
+				files.append(filename)
+		except AttributeError:
+				logging.debug('Long strip mode')
+				page = BeautifulSoup(self.open_url(chapter_url))
+				images = page.find_all('img', src=re.compile("img[0-9]*\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
+				image_count = len(images)
+
+				for image_name, image in enumerate(images, start=1):
+					print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
+					url = image['src']
+					file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
+					req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
+
+					try:
+						response = urllib.request.urlopen(req)
+					except urllib.error.HTTPError as e:
+						print_info('WARNING: Unable to download file ({}).'.format(str(e)))
+						warnings.append('Download of page {}, chapter {:g}, series "{}" failed.'.format(image_name, chapter["chapter"], series_info('title')))
+						continue
+
+					filename = download_directory + "/" + str(image_name) + "." + file_extension
+					f = open(filename, 'wb')
+					f.write(response.read())
+					f.close()
+					files.append(filename)
+
+		filename = download_directory + '/' + download_name
+		self.zip_files(files, filename)
+
+		return warnings
+
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
 	def open_url(self, url):
 		logging.debug(url)
@@ -128,12 +196,6 @@ class Batoto(Crawler):
 		chapters = []
 		for chapter in chapter_row:
 			chapters.append(self.chapter_info(chapter))
-
-		# Remove the v2 part from chapters that have it after the number (34v2) so zip files will be named correctly later.
-		logging.debug('Removing version information from chapter numbers')
-		for chapter in chapters:
-			if re.match(r'^[0-9]*[Vv][0-9]*', chapter["chapter"]):
-				chapter["chapter"] = re.search(r'^([0-9]*)[Vv][0-9]*', chapter["chapter"]).group(1)
 
 		# If the object was initialized with a chapter, only return the chapters.
 		if self.init_with_chapter == True and all_chapters == False:
