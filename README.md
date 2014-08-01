@@ -14,7 +14,8 @@ Crawls Batoto or KissManga for manga.
     -s NUMBER                       chapter to start downloading from.
     -e NUMBER                       chapter to end the downloading at.
     -d DIRECTORY                    directory (absolute or relative) to download to. use '%title' to
-                                    download to a directory named after the title of the manga.
+                                    use the manga title as directory name or '%title_' to use use the
+                                    manga title with spaces replaced by underscores as directory name.
     -q, --quiet                     quiet mode: supresses info output (but not interactive output).
     --debug                         debug mode: print various debugging information.
     --cbz                           files are zipped with a ".cbz" extension instead of ".zip".

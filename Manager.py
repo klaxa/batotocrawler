@@ -216,7 +216,8 @@ for url in config.urls:
 		duplicate_chapters(chapters)
 
 	if config.download_directory != None:
-		download_dir = config.download_directory.replace('%title', clean_filename(manga.series_info("title"), underscore=False))
+		download_dir = config.download_directory.replace('%title_', clean_filename(manga.series_info("title"), underscore=True))
+		download_dir = download_dir.replace('%title', clean_filename(manga.series_info("title"), underscore=False))
 		if os.path.exists(download_dir) == False:
 			os.makedirs(download_dir)
 	else:
