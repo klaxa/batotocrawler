@@ -194,23 +194,37 @@ for url in config.urls:
 	if config.chapter_start != None and len(chapters) > 1:
 		chapter_count = len(chapters)
 		for num, chapter in enumerate(chapters):
-			if config.chapter_start == '{:g}'.format(chapter["chapter"]):
-				print_info("Starting download at chapter {:g}.".format(chapter["chapter"]))
+			try:
+				comparison = '{:g}'.format(chapter["chapter"])
+			except ValueError:
+				comparison = chapter["chapter"]
+			if config.chapter_start == comparison:
+				print_info("Starting download at chapter {}.".format(comparison))
 				del chapters[:num]
 				break
 			elif num == chapter_count - 1:
-				print_info("Defined start chapter not found. Starting at chapter {:g}.".format(chapters[0]["chapter"]))
+				try:
+					print_info("Defined start chapter not found. Starting at chapter {:g}.".format(chapters[0]["chapter"]))
+				except ValueError:
+					print_info("Defined start chapter not found. Starting at chapter {}.".format(chapters[0]["chapter"]))
 
 	# Look for the chapter to end at if '-e' is used.
 	if config.chapter_end != None and len(chapters) > 1:
 		chapter_count = len(chapters)
 		for num, chapter in enumerate(chapters):
-			if config.chapter_end == '{:g}'.format(chapter["chapter"]):
-				print_info("Ending download at chapter {:g}.".format(chapter["chapter"]))
+			try:
+				comparison = '{:g}'.format(chapter["chapter"])
+			except ValueError:
+				comparison = chapter["chapter"]
+			if config.chapter_end == comparison:
+				print_info("Ending download at chapter {}.".format(comparison))
 				del chapters[num+1:]
 				break
 			elif num == chapter_count - 1:
-				print_info("Defined end chapter not found. Ending at chapter {:g}.".format(chapters[-1]["chapter"]))
+				try:
+					print_info("Defined end chapter not found. Ending at chapter {:g}.".format(chapters[-1]["chapter"]))
+				except ValueError:
+					print_info("Defined end chapter not found. Ending at chapter {}.".format(chapters[-1]["chapter"]))
 
 	if len(chapters) > 1:
 		duplicate_chapters(chapters)
@@ -224,10 +238,14 @@ for url in config.urls:
 		download_dir = os.getcwd()
 
 	for chapter in chapters:
+		try:
+			chapter_number = '{:g}'.format(chapter["chapter"])
+		except ValueError:
+			chapter_number = '{}'.format(chapter["chapter"])
 		if chapter["name"] != None:
-			print_info("Chapter {:g} - {}".format(chapter["chapter"], chapter["name"]))
+			print_info("Chapter {} - {}".format(chapter_number, chapter["name"]))
 		else:
-			print_info("Chapter {:g}".format(chapter["chapter"]))
+			print_info("Chapter {}".format(chapter_number))
 
 		clean_title = clean_filename(manga.series_info("title"))
 
