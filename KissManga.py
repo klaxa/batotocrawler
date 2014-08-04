@@ -84,7 +84,7 @@ class KissManga(Crawler):
 				matches = re.findall(r'lstImages\.push\(".*"\);', script.text)
 				image_count = len(matches)
 				for image_name, match in enumerate(matches, start=1):
-					print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
+					print_info("Download: Page {0:04d} / {1:04d}".format(image_name, image_count))
 					image_url = re.search(r'lstImages\.push\("(.*)"\);', match).group(1)
 					file_extension = re.search(r'.*\.([A-Za-z]*)', image_url).group(1)
 					req = urllib.request.Request(image_url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
@@ -96,7 +96,7 @@ class KissManga(Crawler):
 						warnings.append('Download of page {}, chapter {:g}, series "{}" failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
 						continue
 
-					filename = download_directory + "/" + str(image_name) + "." + file_extension
+					filename = '{}/{:06d}.{}'.format(download_directory, image_name, file_extension)
 					f = open(filename, 'wb')
 					f.write(response.read())
 					f.close()

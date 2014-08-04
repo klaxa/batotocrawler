@@ -122,7 +122,7 @@ class Batoto(Crawler):
 			image_count = len(pages)
 
 			for image_name, page_url in enumerate(pages, start=1):
-				print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
+				print_info("Download: Page {0:04d} / {1:04d}".format(image_name, image_count))
 				page = BeautifulSoup(self.open_url(page_url))
 				url = page.find("div", {"id": "full_image"}).find("img")["src"]
 				file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
@@ -134,35 +134,35 @@ class Batoto(Crawler):
 					print_info('WARNING: Unable to download file ({}).'.format(str(e)))
 					warnings.append('Download of page {}, chapter {:g}, series {} failed.'.format(image_name, chapter["chapter"], self.series_info('title')))
 
-				filename = download_directory + "/" + str(image_name) + "." + file_extension
+				filename = '{}/{:06d}.{}'.format(download_directory, image_name, file_extension)
 				f = open(filename, 'wb')
 				f.write(response.read())
 				f.close()
 				files.append(filename)
 		except AttributeError:
-				logging.debug('Long strip mode')
-				page = BeautifulSoup(self.open_url(chapter_url))
-				images = page.find_all('img', src=re.compile("img[0-9]*\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
-				image_count = len(images)
+			logging.debug('Long strip mode')
+			page = BeautifulSoup(self.open_url(chapter_url))
+			images = page.find_all('img', src=re.compile("img[0-9]*\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
+			image_count = len(images)
 
-				for image_name, image in enumerate(images, start=1):
-					print_info("Download: Page {0:04d}".format(image_name) + " / {0:04d}".format(image_count))
-					url = image['src']
-					file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
-					req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
+			for image_name, image in enumerate(images, start=1):
+				print_info("Download: Page {0:04d} / {1:04d}".format(image_name, image_count))
+				url = image['src']
+				file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
+				req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
 
-					try:
-						response = urllib.request.urlopen(req)
-					except urllib.error.HTTPError as e:
-						print_info('WARNING: Unable to download file ({}).'.format(str(e)))
-						warnings.append('Download of page {}, chapter {:g}, series "{}" failed.'.format(image_name, chapter["chapter"], series_info('title')))
-						continue
+				try:
+					response = urllib.request.urlopen(req)
+				except urllib.error.HTTPError as e:
+					print_info('WARNING: Unable to download file ({}).'.format(str(e)))
+					warnings.append('Download of page {}, chapter {:g}, series "{}" failed.'.format(image_name, chapter["chapter"], series_info('title')))
+					continue
 
-					filename = download_directory + "/" + str(image_name) + "." + file_extension
-					f = open(filename, 'wb')
-					f.write(response.read())
-					f.close()
-					files.append(filename)
+				filename = '{}/{:06d}.{}'.format(download_directory, image_name, file_extension)
+				f = open(filename, 'wb')
+				f.write(response.read())
+				f.close()
+				files.append(filename)
 
 		filename = download_directory + '/' + download_name
 		self.zip_files(files, filename)
