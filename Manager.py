@@ -102,7 +102,7 @@ def duplicate_chapters(chapters):
 				interactive()
 			elif config.group_preference != None:
 				if manga.uses_groups:
-					preference(group_preference)
+					preference(config.group_preference)
 				else:
 					logging.debug('Unable to use group preference with site: using no_preference as fallback')
 					no_preference()
