@@ -19,7 +19,11 @@ class Batoto(Crawler):
 			self.init_with_chapter = False
 			logging.debug('Object initialized with series')
 		elif re.match(r'.*batoto\.net/read/.*', url):
-			self.page = BeautifulSoup(self.open_url(self.chapter_series(url)))
+			try:
+				self.page = BeautifulSoup(self.open_url(self.chapter_series(url)))
+			except IndexError:
+				print_info('ERROR: Unable to scrape chapter \'{}\'. If this is a new release, please try again later (Batoto bug).'.format(self.url))
+				self.page = None
 			self.init_with_chapter = True
 			logging.debug('Object initialized with chapter')
 		else:

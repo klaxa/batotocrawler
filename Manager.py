@@ -184,6 +184,9 @@ for url in config.urls:
 		print_info("Invalid input.")
 		exit()
 
+	if manga.page == None:
+		continue
+
 	# Print a warning if the user tries to specify --prefer-group with a site that doesn't use group names.
 	if manga.uses_groups == False and config.group_preference != None:
 		print_info("WARNING: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
