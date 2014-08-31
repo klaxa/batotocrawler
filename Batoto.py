@@ -14,11 +14,11 @@ class Batoto(Crawler):
 
 	def __init__(self, url):
 		self.url = url
-		if re.match(r'.*batoto\.net/comic/.*', url):
+		if re.match(r'.*bato\.to/comic/.*', url):
 			self.page = BeautifulSoup(self.open_url(url))
 			self.init_with_chapter = False
 			logging.debug('Object initialized with series')
-		elif re.match(r'.*batoto\.net/read/.*', url):
+		elif re.match(r'.*bato\.to/read/.*', url):
 			try:
 				self.page = BeautifulSoup(self.open_url(self.chapter_series(url)))
 			except IndexError:
@@ -36,7 +36,7 @@ class Batoto(Crawler):
 	def chapter_series(self, url):
 		logging.debug('Fetching series URL')
 		chapter = BeautifulSoup(self.open_url(url))
-		series_url = chapter.select('a[href*="http://www.batoto.net/comic/_/"]')[0].get('href')
+		series_url = chapter.select('a[href*="bato.to/comic/_/"]')[0].get('href')
 		logging.debug('Series URL: ' + series_url)
 		return series_url
 
@@ -48,7 +48,7 @@ class Batoto(Crawler):
 		chapter_number = re.search(r'Ch\.(.*?)[:\s].*', chapter.a.text).group(1)
 		if re.match(r'^[0-9]*[Vv][0-9]*', chapter_number):
 			chapter_number = re.search(r'^([0-9]*)[Vv][0-9]*', chapter_number).group(1)
-		chapter_group = chapter.select('a[href*="http://www.batoto.net/group/"]')[0].text
+		chapter_group = chapter.select('a[href*="bato.to/group/"]')[0].text
 		
 		try:
 			chapter_number = float(chapter_number)
@@ -104,7 +104,7 @@ class Batoto(Crawler):
 		except AttributeError:
 			logging.debug('Long strip mode')
 			page = BeautifulSoup(self.open_url(chapter_url))
-			images = page.find_all('img', src=re.compile("img[0-9]*\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
+			images = page.find_all('img', src=re.compile("img[0-9]*\.bato\.to/comics/.*/.*/.*/.*/read.*/"))
 			
 			for image in images:
 				image_list.append(image['src'])
@@ -146,7 +146,7 @@ class Batoto(Crawler):
 		except AttributeError:
 			logging.debug('Long strip mode')
 			page = BeautifulSoup(self.open_url(chapter_url))
-			images = page.find_all('img', src=re.compile("img[0-9]*\.batoto\.net/comics/.*/.*/.*/.*/read.*/"))
+			images = page.find_all('img', src=re.compile("img[0-9]*\.bato\.to/comics/.*/.*/.*/.*/read.*/"))
 			image_count = len(images)
 
 			for image_name, image in enumerate(images, start=1):
@@ -235,10 +235,10 @@ class Batoto(Crawler):
 			return re.search(r'.*\n\s(.*)', description).group(1)
 
 		def author():
-			return self.page.select('a[href*="http://www.batoto.net/search?artist_name"]')[0].text.title()
+			return self.page.select('a[href*="bato.to/search?artist_name"]')[0].text.title()
 
 		def artist():
-			return self.page.select('a[href*="http://www.batoto.net/search?artist_name"]')[1].text.title()
+			return self.page.select('a[href*="bato.to/search?artist_name"]')[1].text.title()
 
 		options = {"title": title, "description": description, "author": author, "artist": artist}
 		return options[search]()

@@ -172,7 +172,7 @@ warnings = []
 
 for url in config.urls:
 	# Intializes the manga object if the URL is valid and has a scraper.
-	if re.match(r'.*batoto\.net/.*', url):
+	if re.match(r'.*bato\.to/.*', url):
 		logging.debug('URL match: Batoto')
 		from Batoto import Batoto
 		manga = Batoto(url)
