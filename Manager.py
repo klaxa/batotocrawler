@@ -116,6 +116,7 @@ def generate_config():
 			self.chapter_end = None
 			self.chapter_start = None
 			self.download_directory = None
+			self.download_server = None
 			self.file_extension = 'zip'
 			self.group_preference = None
 			self.interactive_mode = False
@@ -134,7 +135,7 @@ def generate_config():
 					user_config += line.split()
 
 	arguments = user_config + sys.argv[1:]
-	optlist, args = getopt.getopt(arguments, 'e:d:qs:', ['cbz', 'debug', 'interactive', 'prefer-group=', 'quiet'])
+	optlist, args = getopt.getopt(arguments, 'e:d:qs:', ['cbz', 'debug', 'interactive', 'prefer-group=', 'quiet', 'server='])
 	logging.debug('User config: ' + str(user_config))
 	logging.debug('Command-line args: ' + str(sys.argv[1:]))
 
@@ -158,6 +159,8 @@ def generate_config():
 				setattr(config, 'quiet_mode', True)
 			elif opt == '-s':
 				setattr(config, 'chapter_start', arg)
+			elif opt == '--server':
+				setattr(config, 'download_server', arg)
 
 	if len(args) == 0:
 		url = input('>> ')
@@ -175,7 +178,7 @@ for url in config.urls:
 	if re.match(r'.*bato\.to/.*', url):
 		logging.debug('URL match: Batoto')
 		from Batoto import Batoto
-		manga = Batoto(url)
+		manga = Batoto(url, server=config.download_server)
 	elif re.match(r'.*kissmanga\.com/manga/.*', url, flags=re.IGNORECASE):
 		logging.debug('URL match: KissManga')
 		from KissManga import KissManga

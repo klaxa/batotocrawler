@@ -12,8 +12,16 @@ import urllib.request, urllib.error, urllib.parse
 class Batoto(Crawler):
 	uses_groups = True
 
-	def __init__(self, url):
+	def __init__(self, url, server=None):
 		self.url = url
+		if server == None:
+			self.server = None
+		elif server in ['img1', 'img2', 'img3', 'img4']:
+			self.server = server
+		else:
+			print_info('Invalid server selection.')
+			self.server = None
+		
 		if re.match(r'.*bato\.to/comic/.*', url):
 			self.page = BeautifulSoup(self.open_url(url))
 			self.init_with_chapter = False
@@ -129,10 +137,13 @@ class Batoto(Crawler):
 				print_info("Download: Page {0:04d} / {1:04d}".format(image_name, image_count))
 				page = BeautifulSoup(self.open_url(page_url))
 				url = page.find("div", {"id": "full_image"}).find("img")["src"]
+				if self.server != None:
+					url = 'http://{}.bato.to{}'.format(self.server, re.search(r'.*\.bato\.to(.*)', url).group(1))
 				file_extension = re.search(r'.*\.([A-Za-z]*)', url).group(1)
 
 				req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
 				try:
+					logging.debug('Downloading img {}'.format(url))
 					response = urllib.request.urlopen(req)
 				except urllib.error.HTTPError as e:
 					print_info('WARNING: Unable to download file ({}).'.format(str(e)))
@@ -176,7 +187,8 @@ class Batoto(Crawler):
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
 	def open_url(self, url):
 		logging.debug(url)
-		req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'})
+		headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'}
+		req = urllib.request.Request(url, headers=headers)
 		
 		'''Loop to fetch the URL a maximum of 3 times. If X-Cache header value is 'HIT', loop is broken.
 		If final attempt does not return 'HIT', error message with URL is printed to user.'''
@@ -194,7 +206,7 @@ class Batoto(Crawler):
 		else:
 			return reponse.read()
 
-	def series_chapters(self, all_chapters=False, all_versions=False):
+	def series_chapters(self, all_chapters=False):
 		logging.debug('Fetching series chapters')
 		chapter_row = self.page.find_all("tr", {"class": "row lang_English chapter_row"})
 		chapters = []
@@ -202,26 +214,23 @@ class Batoto(Crawler):
 			chapters.append(self.chapter_info(chapter))
 
 		# If the object was initialized with a chapter, only return the chapters.
-		if self.init_with_chapter == True and all_chapters == False:
+		if self.init_with_chapter == True:
 			logging.debug('Searching for specified chapter')
 			for chapter in chapters:
 				if re.match(self.url, chapter["url"]):
 					logging.debug('Chapter found: ' + str(chapter))
 					return [chapter]
 
-		'''If the optional parameter all_chapters is not True, keep the highest version
-		number of a chapter only if a series has v1s and v2s present at the same time.'''
-		if all_versions == False:
-			logging.debug('Removing old versions')
-			for num, chapter in enumerate(chapters):
-				for chapter2 in chapters[num+1:]:
-					if chapter["chapter"] == chapter2["chapter"]:
-						if chapter["version"] > chapter2["version"]:
-							logging.debug('Removing old version: ' + str(chapter2))
-							chapters.remove(chapter2)
-						elif chapter["version"] < chapter2["version"]:
-							logging.debug('Removing old version: ' + str(chapter))
-							chapters.remove(chapter)
+		logging.debug('Removing old versions')
+		for num, chapter in enumerate(chapters):
+			for chapter2 in chapters[num+1:]:
+				if chapter["chapter"] == chapter2["chapter"]:
+					if chapter["version"] > chapter2["version"]:
+						logging.debug('Removing old version: ' + str(chapter2))
+						chapters.remove(chapter2)
+					elif chapter["version"] < chapter2["version"]:
+						logging.debug('Removing old version: ' + str(chapter))
+						chapters.remove(chapter)
 
 		return chapters
 

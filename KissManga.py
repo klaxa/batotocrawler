@@ -110,7 +110,8 @@ class KissManga(Crawler):
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
 	def open_url(self, url):
 		logging.debug(url)
-		req = urllib.request.Request(url, headers={'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip', 'Cookie': 'vns_Adult=yes'})
+		headers = {'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip', 'Cookie': 'vns_Adult=yes'}
+		req = urllib.request.Request(url, headers=headers)
 		response = urllib.request.urlopen(req)
 
 		if response.info().get('Content-Encoding') == 'gzip':
@@ -120,7 +121,7 @@ class KissManga(Crawler):
 		else:
 			return reponse.read()
 
-	def series_chapters(self, all_chapters=False):
+	def series_chapters(self):
 		logging.debug('Fetching series chapters')
 		chapter_row = self.page.find("table", {"class": "listing"}).find_all("tr")[2:]
 		chapters = []
@@ -128,7 +129,7 @@ class KissManga(Crawler):
 			chapters.append(self.chapter_info(chapter))
 
 		# If the object was initialized with a chapter, only return the chapters.
-		if self.init_with_chapter == True and all_chapters == False:
+		if self.init_with_chapter == True:
 			logging.debug('Searching for specified chapter')
 			for chapter in chapters:
 				if self.url == chapter["url"]:
