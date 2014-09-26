@@ -176,13 +176,17 @@ warnings = []
 for url in config.urls:
 	# Intializes the manga object if the URL is valid and has a scraper.
 	if re.match(r'.*bato\.to/.*', url):
-		logging.debug('URL match: Batoto')
-		from Batoto import Batoto
+		from Scrapers import Batoto
 		manga = Batoto(url, server=config.download_server)
+		logging.debug('URL match: {}'.format(manga.site_name))
+	elif re.match(r'.*dynasty-scans\.com/.*', url):
+		from Scrapers import DynastyReader
+		manga = DynastyReader(url)
+		logging.debug('URL match: {}'.format(manga.site_name))
 	elif re.match(r'.*kissmanga\.com/manga/.*', url, flags=re.IGNORECASE):
-		logging.debug('URL match: KissManga')
-		from KissManga import KissManga
+		from Scrapers import KissManga
 		manga = KissManga(url)
+		logging.debug('URL match: {}'.format(manga.site_name))
 	else:
 		print_info("Invalid input.")
 		exit()
@@ -192,7 +196,7 @@ for url in config.urls:
 
 	# Print a warning if the user tries to specify --prefer-group with a site that doesn't use group names.
 	if manga.uses_groups == False and config.group_preference != None:
-		print_info("WARNING: Unable to use '--prefer-group' with {}.".format(manga.__class__.__name__))
+		print_info("WARNING: Unable to use '--prefer-group' with {}.".format(manga.site_name))
 
 	chapters = manga.series_chapters()[::-1]
 
@@ -246,7 +250,7 @@ for url in config.urls:
 	for chapter in chapters:
 		try:
 			chapter_number = '{:g}'.format(chapter["chapter"])
-		except ValueError:
+		except:
 			chapter_number = '{}'.format(chapter["chapter"])
 		if chapter["name"] != None:
 			print_info("Chapter {} - {}".format(chapter_number, chapter["name"]))
@@ -258,7 +262,7 @@ for url in config.urls:
 		if type(chapter["chapter"]) == float:
 			output_name = '{0}_c{1[0]:0>4}.{1[1]}.{2}'.format(clean_title, str(chapter["chapter"]).split('.'), config.file_extension)
 		else:
-			output_name = '{0}_{1}.{2}'.format(clean_title, chapter["chapter"], config.file_extension)
+			output_name = '{0}_{1}.{2}'.format(clean_title, clean_filename(chapter["chapter"]), config.file_extension)
 
 		warnings += manga.download_chapter(chapter, download_dir, output_name)
 

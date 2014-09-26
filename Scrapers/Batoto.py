@@ -2,7 +2,7 @@
 
 from __main__ import print_info
 from bs4 import BeautifulSoup
-from Crawler import Crawler
+from Scrapers.Crawler import Crawler
 import gzip
 import io
 import logging
@@ -10,6 +10,7 @@ import re
 import urllib.request, urllib.error, urllib.parse
 
 class Batoto(Crawler):
+	site_name = 'Batoto'
 	uses_groups = True
 
 	def __init__(self, url, server=None):
