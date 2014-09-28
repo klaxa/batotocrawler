@@ -1,7 +1,12 @@
 batotocrawler
 =============
 
-Crawls Batoto or KissManga for manga.
+Crawls Batoto and various other online manga sites for manga.
+
+# SUPPORTED SITES
+- Batoto
+- Dynasty Reader
+- KissManga
 
 # REQUIREMENTS
 - Python 3.2.3 (untested on older versions)
