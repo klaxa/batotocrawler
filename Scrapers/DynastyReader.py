@@ -102,7 +102,7 @@ class DynastyReader(Crawler):
 	# Function designed to create a request object with correct headers, open the URL and decompress it if it's gzipped.
 	def open_url(self, url):
 		logging.debug(url)
-		headers = {'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip', 'Cookie': 'vns_Adult=yes'}
+		headers = {'User-agent': 'Mozilla/5.0 (Windows NT 6.2; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1667.0 Safari/537.36', 'Accept-encoding': 'gzip'}
 		req = urllib.request.Request(url, headers=headers)
 		response = urllib.request.urlopen(req)
 
@@ -111,7 +111,7 @@ class DynastyReader(Crawler):
 			data = gzip.GzipFile(fileobj=buf, mode="rb")
 			return data
 		else:
-			return reponse.read()
+			return response.read()
 
 	def series_chapters(self, all_chapters=False):
 		logging.debug('Fetching series chapters')
