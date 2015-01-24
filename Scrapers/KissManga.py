@@ -37,14 +37,17 @@ class KissManga(Crawler):
 		logging.debug('Fetching chapter info')
 		chapter = BeautifulSoup(str(chapter_data))
 		chapter_url = 'http://kissmanga.com' + chapter.a['href']
-		chapter_number = re.search(r'{} (Vol\.[0-9]* )?(Ch\.)?([0-9\.]*).*'.format(self.series_info('title')), chapter.a.text).group(3)
+		chapter_number = re.search(r'{} (Vol\.[0-9]* )?(Ch\.)?([0-9\.\-]*).*'.format(self.series_info('title')), chapter.a.text).group(3)
 		if chapter_number == '':
-			chapter_number = re.search(r'{} .* ([0-9\.]*) -.*'.format(self.series_info('title')), chapter.a.text).group(1)
+			chapter_number = re.search(r'{} .* ([0-9\.\-]*)'.format(self.series_info('title')), chapter.a.text).group(1)
 
 		try:
 			chapter_number = float(chapter_number)
 		except ValueError:
 			pass
+
+		if not chapter_number:
+			chapter_number = re.search(r'{} (.*):.*'.format(self.series_info('title')), chapter.a.text).group(1)
 
 		try:
 			chapter_name = re.search(r'.*: (.*)', chapter.a.text).group(1)
