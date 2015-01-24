@@ -94,9 +94,15 @@ def duplicate_chapters(chapters):
 			choice = input('>> ')
 			try:
 				if manga.uses_groups:
-					print_info("Picking {} for chapter {:g}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
+					try:
+						print_info("Picking {} for chapter {:g}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
+					except:
+						print_info("Picking {} for chapter {}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
 				else:
-					print_info("Picking release {} for chapter {:g}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
+					try:
+						print_info("Picking release {} for chapter {:g}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
+					except ValueError:
+						print_info("Picking release {} for chapter {}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
 				del duplicates[int(choice)-1]
 				break
 			except:
