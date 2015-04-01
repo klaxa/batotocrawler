@@ -32,18 +32,27 @@ def duplicate_chapters(chapters):
 			number_of_releases = numbers[len(duplicates)]
 
 		if manga.uses_groups:
-			print_info("{} releases for chapter {:g}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
+			try:
+				print_info("{} releases for chapter {:g}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
+			except ValueError:
+				print_info("{} releases for chapter {}: ".format(number_of_releases, duplicates[0]["chapter"]), newline=False)
 			for item in duplicates[:-1]:		
 				print_info("{}, ".format(item["group"]), newline=False)
 			print_info("{}.".format(duplicates[-1]["group"]))
 		else:
-			print_info("{} releases for chapter {:g}".format(number_of_releases, duplicates[0]["chapter"]))
+			try:
+				print_info("{} releases for chapter {:g}".format(number_of_releases, duplicates[0]["chapter"]))
+			except ValueError:
+				print_info("{} releases for chapter {}".format(number_of_releases, duplicates[0]["chapter"]))
 
 	def no_preference():
 		print_initial()
 
 		if manga.uses_groups:
-			print_info("No preference set. Picking {} for chapter {:g}.".format(duplicates[0]["group"], chapter["chapter"]))
+			try:
+				print_info("No preference set. Picking {} for chapter {:g}.".format(duplicates[0]["group"], chapter["chapter"]))
+			except ValueError:
+				print_info("No preference set. Picking {} for chapter {}.".format(duplicates[0]["group"], chapter["chapter"]))
 		else:
 			print_info("No preference set. Picking latter chapter.")
 
@@ -55,13 +64,19 @@ def duplicate_chapters(chapters):
 
 		for item in duplicates:
 			if item["group"] == group:
-				print_info("Preference: {}. Picking {} for chapter {:g}.".format(group, item["group"], item["chapter"]))
+				try:
+					print_info("Preference: {}. Picking {} for chapter {:g}.".format(group, item["group"], item["chapter"]))
+				except ValueError:
+					print_info("Preference: {}. Picking {} for chapter {}.".format(group, item["group"], item["chapter"]))
 				duplicates.remove(item)
 				for item in duplicates:
 					chapters.remove(item)
 				return
 
-		print_info("Preference: {}. Not found. Picking {} for chapter {:g}.".format(group, duplicates[-1]["group"], duplicates[-1]["chapter"]))
+		try:
+			print_info("Preference: {}. Not found. Picking {} for chapter {:g}.".format(group, duplicates[-1]["group"], duplicates[-1]["chapter"]))
+		except ValueError:
+			print_info("Preference: {}. Not found. Picking {} for chapter {}.".format(group, duplicates[-1]["group"], duplicates[-1]["chapter"]))
 		for item in duplicates[:-1]:
 			chapters.remove(item)
 
@@ -79,9 +94,15 @@ def duplicate_chapters(chapters):
 			choice = input('>> ')
 			try:
 				if manga.uses_groups:
-					print_info("Picking {} for chapter {:g}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
+					try:
+						print_info("Picking {} for chapter {:g}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
+					except:
+						print_info("Picking {} for chapter {}.".format(duplicates[int(choice)-1]["group"], duplicates[int(choice)-1]["chapter"]))
 				else:
-					print_info("Picking release {} for chapter {:g}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
+					try:
+						print_info("Picking release {} for chapter {:g}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
+					except ValueError:
+						print_info("Picking release {} for chapter {}.".format(int(choice), duplicates[int(choice)-1]["chapter"]))
 				del duplicates[int(choice)-1]
 				break
 			except:
