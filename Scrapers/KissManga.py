@@ -47,7 +47,7 @@ class KissManga(Crawler):
 			pass
 
 		if not chapter_number:
-			chapter_number = re.search(r'{} (.*):.*'.format(self.series_info('title')), chapter.a.text).group(1)
+			chapter_number = re.search(r'{} (.*):?.*'.format(self.series_info('title')), chapter.a.text).group(1)
 
 		try:
 			chapter_name = re.search(r'.*: (.*)', chapter.a.text).group(1)
